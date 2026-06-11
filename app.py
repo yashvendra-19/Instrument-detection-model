@@ -106,3 +106,4 @@ async def detect(file: UploadFile = File(...)):
                 upload_path.unlink()
         except Exception:
             pass
+        
