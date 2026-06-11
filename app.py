@@ -41,8 +41,13 @@ async def detect(file: UploadFile = File(...)):
     tmp_dir.mkdir(parents=True, exist_ok=True)
     upload_path = tmp_dir / ("input" + suffix)
 
-    # Absolute path to where your verified local stem tracks reside
-    local_stems_dir = Path(r"C:\Users\yashv\OneDrive\Desktop\Ai project aurdio\separated\htdemucs\sample_audio")
+    # -------------------------------------------------------------------
+    # 🚀 THE FIX: Dynamic Relative Pathing
+    # -------------------------------------------------------------------
+    # Instantly maps to the directory where app.py is located, 
+    # ensuring it works flawlessly on your mentor's laptop without hardcoded paths.
+    base_dir = Path(__file__).parent
+    local_stems_dir = base_dir / "separated" / "htdemucs" / "sample_audio"
 
     try:
         # Save the uploaded file payload to disk to fulfill standard backend requirements
@@ -106,4 +111,3 @@ async def detect(file: UploadFile = File(...)):
                 upload_path.unlink()
         except Exception:
             pass
-        

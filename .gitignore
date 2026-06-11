@@ -62,7 +62,6 @@ env/
 *.m4a
 
 # Separated stems and temp files
-separated/
 separation_workspace/
 temp/
 tmp/
