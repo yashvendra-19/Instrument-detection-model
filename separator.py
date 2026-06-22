@@ -19,10 +19,18 @@ def separate_stems(audio_path: str) -> dict:
 
     # No clearing of global WORK_DIR here to prevent WinError 5 locks.
     # We let Demucs generate output inside its unique request subfolder.
+    import sys
+    # Fix for Windows Access Violation (0xC0000005) segfaults in PyTorch/OpenMP
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    
     command = [
-        "demucs",
-        "-n", "htdemucs",
+        sys.executable, "-m", "demucs",
+        "-n", "mdx_extra_q",
         "--jobs", "1",
+        "-d", "cuda",
+        "--segment", "2",
         "--out", str(WORK_DIR),
         str(input_file)
     ]
@@ -30,16 +38,15 @@ def separate_stems(audio_path: str) -> dict:
     print(f"[separator] Executing CLI: {' '.join(command)}")
     
     try:
-        # Pass capture_output=True to read runtime logs if it fails
-        subprocess.run(command, check=True, text=True, capture_output=True)
+        # Remove capture_output to prevent tqdm progress bars from swallowing the actual error in stderr
+        subprocess.run(command, check=True)
     except subprocess.CalledProcessError as err:
-        print(f"[separator] Demucs structural fault log:\n{err.stderr}")
-        raise RuntimeError(f"Demucs processing step failed: {err.stderr}")
+        raise RuntimeError(f"Demucs processing step failed with return code {err.returncode}. Please check the terminal logs for the exact error.")
 
     print("[separator] Demucs file generation finished successfully.")
 
     # Locate the created track folder dynamically inside the temporary sequence path
-    expected_output_dir = WORK_DIR / "htdemucs" / input_file.stem
+    expected_output_dir = WORK_DIR / "mdx_extra_q" / input_file.stem
 
     stems = {}
     for stem_name in STEM_NAMES:

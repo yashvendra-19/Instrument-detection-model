@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 # Automatically imports your working classifier.py from the same directory
 import classifier
+import separator
 
 # -------------------------------------------------------------------
 # FastAPI App Instance Configuration
@@ -41,27 +42,14 @@ async def detect(file: UploadFile = File(...)):
     tmp_dir.mkdir(parents=True, exist_ok=True)
     upload_path = tmp_dir / ("input" + suffix)
 
-    # -------------------------------------------------------------------
-    # 🚀 THE FIX: Dynamic Relative Pathing
-    # -------------------------------------------------------------------
-    # Instantly maps to the directory where app.py is located, 
-    # ensuring it works flawlessly on your mentor's laptop without hardcoded paths.
-    base_dir = Path(__file__).parent
-    local_stems_dir = base_dir / "separated" / "htdemucs" / "sample_audio"
-
     try:
         # Save the uploaded file payload to disk to fulfill standard backend requirements
         with open(upload_path, "wb") as out:
             shutil.copyfileobj(file.file, out)
 
-        # 2. High-speed direct mapping (Bypasses unstable CLI subprocess execution loops)
-        print("[API INFO] Running high-speed mode. Routing straight to local stems...")
-        
-        # Verify extensions dynamically to support either .wav or .mp3 on your disk
-        stems = {
-            "drums": str(local_stems_dir / "drums.wav" if (local_stems_dir / "drums.wav").exists() else local_stems_dir / "drums.mp3"),
-            "other": str(local_stems_dir / "other.wav" if (local_stems_dir / "other.wav").exists() else local_stems_dir / "other.mp3")
-        }
+        # 2. Dynamic Audio Separation
+        print("[API INFO] Running separation on uploaded audio file...")
+        stems = separator.separate_stems(str(upload_path))
 
         # 3. Process the track vectors straight through the working CLAP engine
         print("[API] Processing files through CLAP Classification Model...")

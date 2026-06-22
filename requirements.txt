@@ -13,3 +13,7 @@ laion-clap>=1.0.0
 # Data Math Stack
 numpy>=1.24.0
 scipy>=1.11.0
+
+# Audio Separation
+demucs>=4.0.0
+diffq>=0.2.4
