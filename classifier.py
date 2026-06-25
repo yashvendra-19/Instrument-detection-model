@@ -36,7 +36,24 @@ CANDIDATE_PROMPTS = [
     "A traditional Indian dholak hand drum beating a folk rhythm",
     "A traditional Indian mridangam double sided drum playing classical rhythms",
     "A traditional Indian ghatam clay pot drum playing rhythmic beats",
-    "A traditional duff frame drum or khanjari tapping a rhythmic beat"
+    "A traditional duff frame drum or khanjari tapping a rhythmic beat",
+    
+    # Electronic / Modern
+    "An electric guitar playing loud amplified chords",
+    "A heavy electronic kick drum beating a dance rhythm",
+    "A digital electronic synthesizer playing a modern pop melody",
+    "A deep electronic 808 sub bass booming",
+    "An electric piano or rhodes playing smooth jazz chords",
+    "An electronic drum machine playing a synthetic beat",
+    
+    # Modern Brass & Woodwinds
+    "A bright brass trumpet playing a loud jazzy melody",
+    "A smooth jazz saxophone playing a solo",
+    "A deep brass trombone sliding notes",
+    
+    # Modern Strings
+    "A solo classical violin playing a high pitched melody",
+    "A deep classical cello playing low string notes"
 ]
 
 # Strict mapping dictionary to ensure the final JSON output matches the expected naming convention
@@ -47,6 +64,7 @@ PROMPT_TO_INSTRUMENT = {
     "An acoustic guitar strumming chords cleanly": "Acoustic guitar",
     "A deep bass guitar rhythmic low frequency line": "Bass guitar",
     "Orchestral cinematic strings section playing a sweeping melody": "Strings section",
+    
     "A traditional Indian sitar plucking melodic classical music": "Sitar",
     "A traditional Indian sarod plucking classical melodies": "Sarod",
     "A traditional Indian sarangi bowed string instrument playing a mournful melody": "Sarangi",
@@ -61,7 +79,21 @@ PROMPT_TO_INSTRUMENT = {
     "A traditional Indian dholak hand drum beating a folk rhythm": "Dholak",
     "A traditional Indian mridangam double sided drum playing classical rhythms": "Mridangam",
     "A traditional Indian ghatam clay pot drum playing rhythmic beats": "Ghatam",
-    "A traditional duff frame drum or khanjari tapping a rhythmic beat": "Duff or khanjari"
+    "A traditional duff frame drum or khanjari tapping a rhythmic beat": "Duff or khanjari",
+    
+    "An electric guitar playing loud amplified chords": "Electric guitar",
+    "A heavy electronic kick drum beating a dance rhythm": "Electronic kick",
+    "A digital electronic synthesizer playing a modern pop melody": "Synthesizer",
+    "A deep electronic 808 sub bass booming": "808 Bass",
+    "An electric piano or rhodes playing smooth jazz chords": "Electric piano",
+    "An electronic drum machine playing a synthetic beat": "Drum machine",
+    
+    "A bright brass trumpet playing a loud jazzy melody": "Trumpet",
+    "A smooth jazz saxophone playing a solo": "Saxophone",
+    "A deep brass trombone sliding notes": "Trombone",
+    
+    "A solo classical violin playing a high pitched melody": "Violin",
+    "A deep classical cello playing low string notes": "Cello"
 }
 
 def classify_stem(stem_path: str):
@@ -86,13 +118,16 @@ def classify_stem(stem_path: str):
         # 2. Compute the cosine similarity matrix (dot product)
         similarity = audio_features @ text_features.T
         
-        # 3. Temperature Scaling Optimization (tau = 0.05) to sharpen confidence peaks
-        temperature = 0.05
-        probs = torch.softmax(similarity / temperature, dim=-1).cpu().numpy()[0]
+        # 3. Multi-label Optimization: Use raw cosine similarity instead of Softmax.
+        # Softmax forces all scores to sum to 1.0, which means if one instrument is loud, 
+        # it squashes all others to 0.0. Raw similarity allows multiple instruments to score highly independently.
+        probs = similarity.cpu().numpy()[0]
 
     # Formulating response items to match the expected format perfectly
     results = []
-    THRESHOLD = 0.10 # Only keep instruments with a confidence score greater than 10%
+    # With raw cosine similarity, scores usually range between 0.15 and 0.35.
+    # We will set a threshold of 0.15 for raw similarity.
+    THRESHOLD = 0.15
 
     for score, prompt in zip(probs, CANDIDATE_PROMPTS):
         confidence_val = float(score)
