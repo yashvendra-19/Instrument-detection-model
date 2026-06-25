@@ -2,33 +2,66 @@ import os
 import torch
 import laion_clap
 
-print("Initializing Upgraded CLAP Framework (V2.2 - Complete 8-Instrument Matrix)...")
+print("Initializing Upgraded CLAP Framework (V3.0 - Expanded Indian Instrument Matrix)...")
 # 1. Initialize and cache the CLAP model globally so it doesn't reload on every single API request.
 model = laion_clap.CLAP_Module(enable_fusion=False)
 model.load_ckpt()
 
-# 2. Complete 8-Instrument Dataset requested by your mentor with optimized descriptive prompts.
+# 2. Comprehensive Instrument Dataset with optimized descriptive prompts.
 CANDIDATE_PROMPTS = [
+    # General/Western
     "A classical grand piano playing notes harmoniously",
     "A punchy acoustic drum kit beating a rhythm section",
-    "A bright traditional mandolin plucking rapid folk melodies",
     "A clean studio recording of a flute playing a melody",
     "An acoustic guitar strumming chords cleanly",
     "A deep bass guitar rhythmic low frequency line",
-    "A traditional duff frame drum or khanjari tapping a rhythmic beat",
-    "Orchestral cinematic strings section playing a sweeping melody"
+    "Orchestral cinematic strings section playing a sweeping melody",
+    
+    # Indian Strings
+    "A traditional Indian sitar plucking melodic classical music",
+    "A traditional Indian sarod plucking classical melodies",
+    "A traditional Indian sarangi bowed string instrument playing a mournful melody",
+    "A traditional Indian veena plucked string instrument playing classical music",
+    "A traditional Indian santoor hammered dulcimer playing rapid melodies",
+    "A bright traditional mandolin plucking rapid folk melodies",
+    "A traditional Indian tanpura playing a continuous drone",
+    
+    # Indian Wind & Keyboard
+    "A traditional Indian harmonium pumping keys to play a melody",
+    "A traditional Indian bansuri bamboo flute playing a soulful melody",
+    "A traditional Indian shehnai playing a loud reedy wedding melody",
+    
+    # Indian Percussion
+    "A traditional Indian tabla playing rapid rhythmic percussion strokes",
+    "A traditional Indian dholak hand drum beating a folk rhythm",
+    "A traditional Indian mridangam double sided drum playing classical rhythms",
+    "A traditional Indian ghatam clay pot drum playing rhythmic beats",
+    "A traditional duff frame drum or khanjari tapping a rhythmic beat"
 ]
 
-# Strict mapping dictionary to ensure the final JSON output matches the mentor's exact naming convention
+# Strict mapping dictionary to ensure the final JSON output matches the expected naming convention
 PROMPT_TO_INSTRUMENT = {
     "A classical grand piano playing notes harmoniously": "Piano",
     "A punchy acoustic drum kit beating a rhythm section": "Drums",
-    "A bright traditional mandolin plucking rapid folk melodies": "Mandolin",
     "A clean studio recording of a flute playing a melody": "Flute",
     "An acoustic guitar strumming chords cleanly": "Acoustic guitar",
     "A deep bass guitar rhythmic low frequency line": "Bass guitar",
-    "A traditional duff frame drum or khanjari tapping a rhythmic beat": "Duff or khanjari",
-    "Orchestral cinematic strings section playing a sweeping melody": "Strings section"
+    "Orchestral cinematic strings section playing a sweeping melody": "Strings section",
+    "A traditional Indian sitar plucking melodic classical music": "Sitar",
+    "A traditional Indian sarod plucking classical melodies": "Sarod",
+    "A traditional Indian sarangi bowed string instrument playing a mournful melody": "Sarangi",
+    "A traditional Indian veena plucked string instrument playing classical music": "Veena",
+    "A traditional Indian santoor hammered dulcimer playing rapid melodies": "Santoor",
+    "A bright traditional mandolin plucking rapid folk melodies": "Mandolin",
+    "A traditional Indian tanpura playing a continuous drone": "Tanpura",
+    "A traditional Indian harmonium pumping keys to play a melody": "Harmonium",
+    "A traditional Indian bansuri bamboo flute playing a soulful melody": "Bansuri",
+    "A traditional Indian shehnai playing a loud reedy wedding melody": "Shehnai",
+    "A traditional Indian tabla playing rapid rhythmic percussion strokes": "Tabla",
+    "A traditional Indian dholak hand drum beating a folk rhythm": "Dholak",
+    "A traditional Indian mridangam double sided drum playing classical rhythms": "Mridangam",
+    "A traditional Indian ghatam clay pot drum playing rhythmic beats": "Ghatam",
+    "A traditional duff frame drum or khanjari tapping a rhythmic beat": "Duff or khanjari"
 }
 
 def classify_stem(stem_path: str):
@@ -59,16 +92,18 @@ def classify_stem(stem_path: str):
 
     # Formulating response items to match the expected format perfectly
     results = []
+    THRESHOLD = 0.10 # Only keep instruments with a confidence score greater than 10%
+
     for score, prompt in zip(probs, CANDIDATE_PROMPTS):
         confidence_val = float(score)
-        instrument_name = PROMPT_TO_INSTRUMENT[prompt]
         
-        # Kept noise gate open (0.0) so ALL 8 instruments are guaranteed to show up in the JSON array as requested!
-        results.append({
-            "instrument": instrument_name,
-            "original_prediction": instrument_name,
-            "confidence": round(confidence_val, 4)
-        })
+        if confidence_val >= THRESHOLD:
+            instrument_name = PROMPT_TO_INSTRUMENT[prompt]
+            results.append({
+                "instrument": instrument_name,
+                "original_prediction": instrument_name,
+                "confidence": round(confidence_val, 4)
+            })
             
     # Return results sorted with highest confidence first
     return sorted(results, key=lambda x: x["confidence"], reverse=True)
