@@ -4,8 +4,10 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+import secrets
+from fastapi import FastAPI, File, HTTPException, UploadFile, Depends, status
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 # Automatically imports your working classifier.py from the same directory
 import classifier
@@ -22,13 +24,29 @@ app = FastAPI(
 # Stems we want to route through our custom CLAP classifier matrix
 # (Removed STEM_ITEMS as we process the full audio now)
 
+security = HTTPBasic()
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    """Verifies the HTTP Basic Auth credentials against the hardcoded secure values."""
+    # To prevent timing attacks, we use secrets.compare_digest
+    correct_username = secrets.compare_digest(credentials.username, "pratikverma0902@gmail.com")
+    correct_password = secrets.compare_digest(credentials.password, "P@55W0rd")
+    
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials
+
 @app.get("/")
-def home():
+def home(credentials: HTTPBasicCredentials = Depends(verify_credentials)):
     """Simple health check endpoint."""
-    return {"status": "ok", "message": "POST an audio file to /detect"}
+    return {"status": "ok", "message": "POST an audio file to /detect", "user": credentials.username}
 
 @app.post("/detect")
-async def detect(file: UploadFile = File(...)):
+async def detect(file: UploadFile = File(...), credentials: HTTPBasicCredentials = Depends(verify_credentials)):
     """
     Main detection endpoint.
     Accepts any uploaded audio file, bypasses local process bottlenecks,
