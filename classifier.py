@@ -1,5 +1,7 @@
 import os
 import torch
+import librosa
+import numpy as np
 import laion_clap
 
 print("Initializing Upgraded CLAP Framework (V3.0 - Expanded Indian Instrument Matrix)...")
@@ -96,18 +98,49 @@ PROMPT_TO_INSTRUMENT = {
     "A deep classical cello playing low string notes": "Cello"
 }
 
-def classify_stem(stem_path: str):
+def classify_audio(audio_path: str):
     """
-    Takes the path to an extracted audio stem file, computes contrastive
-    embeddings using Microsoft CLAP across 8 target categories, applies 
-    temperature scaling, and returns a formatted list matching the production JSON schema.
+    Takes the path to the original full audio file, chunks it into 10-second segments,
+    computes contrastive embeddings for all chunks in a batch using Microsoft CLAP,
+    and returns the maximum confidence score for each instrument across the timeline.
     """
-    if not os.path.exists(stem_path):
-        print(f"Error inside classifier: Path {stem_path} does not exist.")
+    if not os.path.exists(audio_path):
+        print(f"Error inside classifier: Path {audio_path} does not exist.")
         return []
 
-    # Get multi-modal contrastive embeddings using the expanded prompt setup
-    audio_embed = model.get_audio_embedding_from_filelist(x=[stem_path], use_tensor=True)
+    print(f"[classifier] Loading audio and chunking into 10-second Sliding Windows...")
+    try:
+        # Load audio at 48kHz natively for CLAP
+        audio_data, sr = librosa.load(audio_path, sr=48000, mono=True)
+    except Exception as e:
+        print(f"Error loading audio: {e}")
+        return []
+
+    # Slice the audio into 10-second chunks (480000 samples)
+    chunk_length_samples = sr * 10
+    chunks = []
+    
+    for i in range(0, len(audio_data), chunk_length_samples):
+        chunk = audio_data[i:i + chunk_length_samples]
+        
+        # Skip leftover tail chunks that are less than 1 second to avoid noise
+        if len(chunk) < sr * 1:
+            continue
+            
+        # CLAP strictly expects 480000 sample tensors. Pad with silence if slightly short.
+        if len(chunk) < chunk_length_samples:
+            chunk = np.pad(chunk, (0, chunk_length_samples - len(chunk)), 'constant')
+            
+        chunks.append(chunk)
+
+    if not chunks:
+        return []
+
+    print(f"[classifier] Batch processing {len(chunks)} chunks through CLAP Engine...")
+    
+    # Intializing tensor inference (batching drastically speeds this up)
+    # laion_clap supports get_audio_embedding_from_data for numpy arrays
+    audio_embed = model.get_audio_embedding_from_data(x=chunks, use_tensor=True)
     text_embed = model.get_text_embedding(CANDIDATE_PROMPTS, use_tensor=True)
 
     with torch.no_grad():
@@ -115,17 +148,16 @@ def classify_stem(stem_path: str):
         audio_features = audio_embed / audio_embed.norm(dim=-1, keepdim=True)
         text_features = text_embed / text_embed.norm(dim=-1, keepdim=True)
         
-        # 2. Compute the cosine similarity matrix (dot product)
+        # 2. Compute the cosine similarity matrix: Shape (num_chunks, num_prompts)
         similarity = audio_features @ text_features.T
         
-        # 3. Multi-label Optimization: Use raw cosine similarity instead of Softmax.
-        # Softmax forces all scores to sum to 1.0, which means if one instrument is loud, 
-        # it squashes all others to 0.0. Raw similarity allows multiple instruments to score highly independently.
-        probs = similarity.cpu().numpy()[0]
+        # 3. Max Pooling: Get the maximum similarity score for each instrument across all chunks
+        # This isolates the specific 10-second moment the instrument played the loudest!
+        max_probs = torch.max(similarity, dim=0).values.cpu().numpy()
 
-    # Formulating response items to match the expected format perfectly
+    # Formulating response items
     results = []
-    for score, prompt in zip(probs, CANDIDATE_PROMPTS):
+    for score, prompt in zip(max_probs, CANDIDATE_PROMPTS):
         confidence_val = float(score)
         instrument_name = PROMPT_TO_INSTRUMENT[prompt]
         
@@ -138,13 +170,9 @@ def classify_stem(stem_path: str):
     # Sort with highest confidence first
     sorted_results = sorted(results, key=lambda x: x["confidence"], reverse=True)
     
-    # Dynamic Thresholding: We don't know how many instruments are in the song (could be 2, could be 12).
-    # We find the 'average' confidence score across all 33 instruments (the noise floor)
-    # and only return the instruments that spike significantly above that average.
+    # Dynamic Thresholding: Calculate noise floor and isolate massive spikes
     if len(sorted_results) > 0:
         mean_score = sum(r["confidence"] for r in sorted_results) / len(sorted_results)
-        
-        # Keep instruments that are at least 15% higher than the average noise floor
         dynamic_threshold = mean_score * 1.15 
         
         final_instruments = [r for r in sorted_results if r["confidence"] >= dynamic_threshold]

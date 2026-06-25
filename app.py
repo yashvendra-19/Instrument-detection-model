@@ -11,7 +11,6 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 # Automatically imports your working classifier.py from the same directory
 import classifier
-import separator
 
 # -------------------------------------------------------------------
 # FastAPI App Instance Configuration
@@ -22,8 +21,7 @@ app = FastAPI(
     version="2.0",
 )
 
-# Stems we want to route through our custom CLAP classifier matrix
-STEM_ITEMS = ("drums", "bass", "other")
+# (Stems configuration removed - using Sliding Window on full audio)
 
 security = HTTPBasic()
 
@@ -65,33 +63,9 @@ async def detect(file: UploadFile = File(...), credentials: HTTPBasicCredentials
         with open(upload_path, "wb") as out:
             shutil.copyfileobj(file.file, out)
 
-        # 2. Dynamic Audio Separation (Restored for Accuracy)
-        print("[API INFO] Running optimized separation on uploaded audio file...")
-        stems = separator.separate_stems(str(upload_path))
-
-        # 3. Process the track vectors straight through the working CLAP engine
-        print("[API] Processing stems through CLAP Classification Model...")
-        all_detections = []
-        for stem_name in STEM_ITEMS:
-            stem_path = stems.get(stem_name)
-            if stem_path and os.path.exists(stem_path):
-                print(f"[API] Classifying track target: {stem_path}")
-                detections = classifier.classify_stem(stem_path)
-                all_detections.extend(detections)
-
-        # 4. Deduplicate (Required now that we analyze multiple stems)
-        best_per_label = {}
-        for det in all_detections:
-            label = det["instrument"]
-            if label not in best_per_label or det["confidence"] > best_per_label[label]["confidence"]:
-                best_per_label[label] = det
-
-        # Sort with highest confidence at the top of the array
-        instruments = sorted(
-            best_per_label.values(), 
-            key=lambda d: d["confidence"], 
-            reverse=True
-        )
+        # 2. Sliding Window Audio Analysis
+        print("[API INFO] Running Sliding Window analysis on full uploaded audio file...")
+        instruments = classifier.classify_audio(str(upload_path))
 
         # 5. Build and send back the production response payload
         return JSONResponse(
