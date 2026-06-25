@@ -2,6 +2,9 @@ import os
 import torch
 import librosa
 import numpy as np
+import soundfile as sf
+import tempfile
+import uuid
 import laion_clap
 
 print("Initializing Upgraded CLAP Framework (V3.0 - Expanded Indian Instrument Matrix)...")
@@ -138,10 +141,27 @@ def classify_audio(audio_path: str):
 
     print(f"[classifier] Batch processing {len(chunks)} chunks through CLAP Engine...")
     
-    # Intializing tensor inference (batching drastically speeds this up)
-    # laion_clap supports get_audio_embedding_from_data for numpy arrays
-    audio_embed = model.get_audio_embedding_from_data(x=chunks, use_tensor=True)
+    # We will write chunks to temporary WAV files and use the proven filelist embedding function
+    # This prevents PyTorch tensor/numpy shape mismatch errors in laion_clap's data ingestion
+    tmp_dir = tempfile.gettempdir()
+    batch_id = uuid.uuid4().hex
+    chunk_paths = []
+    
+    for idx, chunk in enumerate(chunks):
+        path = os.path.join(tmp_dir, f"chunk_{batch_id}_{idx}.wav")
+        sf.write(path, chunk, 48000)
+        chunk_paths.append(path)
+        
+    # Process all chunks through the model simultaneously
+    audio_embed = model.get_audio_embedding_from_filelist(x=chunk_paths, use_tensor=True)
     text_embed = model.get_text_embedding(CANDIDATE_PROMPTS, use_tensor=True)
+    
+    # Cleanup temporary chunk files
+    for p in chunk_paths:
+        try:
+            os.remove(p)
+        except Exception:
+            pass
 
     with torch.no_grad():
         # 1. Normalize multi-modal embeddings to unit vectors
