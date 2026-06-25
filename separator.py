@@ -27,9 +27,10 @@ def separate_stems(audio_path: str) -> dict:
     
     command = [
         sys.executable, "-m", "demucs",
-        "-n", "htdemucs",
+        "-n", "mdx_extra",
         "--jobs", "1",
         "-d", "cpu",
+        "--segment", "2",
         "--out", str(WORK_DIR),
         str(input_file)
     ]
@@ -37,15 +38,16 @@ def separate_stems(audio_path: str) -> dict:
     print(f"[separator] Executing CLI: {' '.join(command)}")
     
     try:
-        # Remove capture_output to prevent tqdm progress bars from swallowing the actual error in stderr
-        subprocess.run(command, check=True)
+        # Capture output to get the exact error string back to the API response
+        subprocess.run(command, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as err:
-        raise RuntimeError(f"Demucs processing step failed with return code {err.returncode}. Please check the terminal logs for the exact error.")
+        error_msg = err.stderr if err.stderr else err.stdout
+        raise RuntimeError(f"Demucs processing step failed with return code {err.returncode}. Exact Error: {error_msg}")
 
     print("[separator] Demucs file generation finished successfully.")
 
     # Locate the created track folder dynamically inside the temporary sequence path
-    expected_output_dir = WORK_DIR / "htdemucs" / input_file.stem
+    expected_output_dir = WORK_DIR / "mdx_extra" / input_file.stem
 
     stems = {}
     for stem_name in STEM_NAMES:
