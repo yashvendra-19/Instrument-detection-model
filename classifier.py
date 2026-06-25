@@ -125,20 +125,29 @@ def classify_stem(stem_path: str):
 
     # Formulating response items to match the expected format perfectly
     results = []
-    # With raw cosine similarity, scores usually range between 0.15 and 0.35.
-    # We will set a threshold of 0.15 for raw similarity.
-    THRESHOLD = 0.15
-
     for score, prompt in zip(probs, CANDIDATE_PROMPTS):
         confidence_val = float(score)
+        instrument_name = PROMPT_TO_INSTRUMENT[prompt]
         
-        if confidence_val >= THRESHOLD:
-            instrument_name = PROMPT_TO_INSTRUMENT[prompt]
-            results.append({
-                "instrument": instrument_name,
-                "original_prediction": instrument_name,
-                "confidence": round(confidence_val, 4)
-            })
+        results.append({
+            "instrument": instrument_name,
+            "original_prediction": instrument_name,
+            "confidence": round(confidence_val, 4)
+        })
             
-    # Return results sorted with highest confidence first
-    return sorted(results, key=lambda x: x["confidence"], reverse=True)
+    # Sort with highest confidence first
+    sorted_results = sorted(results, key=lambda x: x["confidence"], reverse=True)
+    
+    # Dynamic Thresholding: We don't know how many instruments are in the song (could be 2, could be 12).
+    # We find the 'average' confidence score across all 33 instruments (the noise floor)
+    # and only return the instruments that spike significantly above that average.
+    if len(sorted_results) > 0:
+        mean_score = sum(r["confidence"] for r in sorted_results) / len(sorted_results)
+        
+        # Keep instruments that are at least 15% higher than the average noise floor
+        dynamic_threshold = mean_score * 1.15 
+        
+        final_instruments = [r for r in sorted_results if r["confidence"] >= dynamic_threshold]
+        return final_instruments
+    
+    return sorted_results
