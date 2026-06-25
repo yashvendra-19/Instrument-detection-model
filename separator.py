@@ -27,10 +27,9 @@ def separate_stems(audio_path: str) -> dict:
     
     command = [
         sys.executable, "-m", "demucs",
-        "-n", "mdx_extra",
+        "-n", "htdemucs",
         "--jobs", "1",
         "-d", "cpu",
-        "--segment", "2",
         "--out", str(WORK_DIR),
         str(input_file)
     ]
@@ -46,7 +45,7 @@ def separate_stems(audio_path: str) -> dict:
     print("[separator] Demucs file generation finished successfully.")
 
     # Locate the created track folder dynamically inside the temporary sequence path
-    expected_output_dir = WORK_DIR / "mdx_extra" / input_file.stem
+    expected_output_dir = WORK_DIR / "htdemucs" / input_file.stem
 
     stems = {}
     for stem_name in STEM_NAMES:

@@ -11,6 +11,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 # Automatically imports your working classifier.py from the same directory
 import classifier
+import separator
 
 # -------------------------------------------------------------------
 # FastAPI App Instance Configuration
@@ -22,7 +23,7 @@ app = FastAPI(
 )
 
 # Stems we want to route through our custom CLAP classifier matrix
-# (Removed STEM_ITEMS as we process the full audio now)
+STEM_ITEMS = ("drums", "bass", "other")
 
 security = HTTPBasic()
 
@@ -64,11 +65,21 @@ async def detect(file: UploadFile = File(...), credentials: HTTPBasicCredentials
         with open(upload_path, "wb") as out:
             shutil.copyfileobj(file.file, out)
 
-        # 2. Skip separation, classify the original audio directly for speed
-        print("[API INFO] Processing full audio file directly through CLAP Classification Model...")
-        all_detections = classifier.classify_stem(str(upload_path))
+        # 2. Dynamic Audio Separation (Restored for Accuracy)
+        print("[API INFO] Running optimized separation on uploaded audio file...")
+        stems = separator.separate_stems(str(upload_path))
 
-        # 3. Deduplicate (Though not strictly necessary for a single run, kept for structural consistency)
+        # 3. Process the track vectors straight through the working CLAP engine
+        print("[API] Processing stems through CLAP Classification Model...")
+        all_detections = []
+        for stem_name in STEM_ITEMS:
+            stem_path = stems.get(stem_name)
+            if stem_path and os.path.exists(stem_path):
+                print(f"[API] Classifying track target: {stem_path}")
+                detections = classifier.classify_stem(stem_path)
+                all_detections.extend(detections)
+
+        # 4. Deduplicate (Required now that we analyze multiple stems)
         best_per_label = {}
         for det in all_detections:
             label = det["instrument"]
