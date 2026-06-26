@@ -152,8 +152,20 @@ def classify_audio(audio_path: str):
         sf.write(path, chunk, 48000)
         chunk_paths.append(path)
         
-    # Process all chunks through the model simultaneously
-    audio_embed = model.get_audio_embedding_from_filelist(x=chunk_paths, use_tensor=True)
+    # Process chunks in small batches to prevent Out Of Memory (OOM) kills on the server
+    BATCH_SIZE = 4
+    audio_embeds = []
+    
+    for i in range(0, len(chunk_paths), BATCH_SIZE):
+        batch_paths = chunk_paths[i:i + BATCH_SIZE]
+        # Get embeddings for this small batch
+        batch_embed = model.get_audio_embedding_from_filelist(x=batch_paths, use_tensor=True)
+        audio_embeds.append(batch_embed)
+        
+    # Concatenate all batch embeddings together
+    audio_embed = torch.cat(audio_embeds, dim=0)
+    
+    # Text embeddings only need to be computed once
     text_embed = model.get_text_embedding(CANDIDATE_PROMPTS, use_tensor=True)
     
     # Cleanup temporary chunk files
