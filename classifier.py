@@ -173,18 +173,31 @@ def classify_audio(audio_path: str):
         
         # 3. Max Pooling: Get the maximum similarity score for each instrument across all chunks
         # This isolates the specific 10-second moment the instrument played the loudest!
-        max_probs = torch.max(similarity, dim=0).values.cpu().numpy()
+        max_results = torch.max(similarity, dim=0)
+        max_probs = max_results.values.cpu().numpy()
+        max_indices = max_results.indices.cpu().numpy()
 
     # Formulating response items
     results = []
-    for score, prompt in zip(max_probs, CANDIDATE_PROMPTS):
+    for idx, (score, prompt) in enumerate(zip(max_probs, CANDIDATE_PROMPTS)):
         confidence_val = float(score)
         instrument_name = PROMPT_TO_INSTRUMENT[prompt]
+        chunk_index = max_indices[idx]
+        
+        # Calculate start and end seconds for the 10-second chunk
+        start_sec = chunk_index * 10
+        end_sec = start_sec + 10
+        
+        # Format as M:SS
+        start_str = f"{start_sec // 60}:{start_sec % 60:02d}"
+        end_str = f"{end_sec // 60}:{end_sec % 60:02d}"
         
         results.append({
             "instrument": instrument_name,
             "original_prediction": instrument_name,
-            "confidence": round(confidence_val, 4)
+            "confidence": round(confidence_val, 4),
+            "confidence_percentage": f"{round(confidence_val * 100, 2)}%",
+            "timestamp": f"{start_str} - {end_str}"
         })
             
     # Sort with highest confidence first
