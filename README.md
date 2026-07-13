@@ -1,392 +1,233 @@
-# 🎵 Indian Music Instrument Detection Model - CRM
+# Indian Music Instrument Detection Microservice
 
-> **An intelligent audio intelligence system that detects and classifies musical instruments in Indian music using Microsoft's CLAP and Demucs source separation.**
+This repository contains a FastAPI microservice for detecting musical instruments in uploaded audio. It was built for Indian music workflows, where a single song can contain a mix of vocals, percussion, strings, harmonium, flute, electronic layers, and other instruments that need to be identified quickly.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+This microservice is being used by Hindi Karaoke Shop, whose website is https://hindikaraokeshop.com/. Hindi Karaoke Shop works with a large catalog of karaoke tracks, so this service helps make audio analysis faster, more consistent, and easier to integrate into internal tools.
 
-## 🎯 Project Overview
+## What the service does
 
-This advanced machine learning project combines **audio source separation** with **multimodal contrastive learning** to identify and classify musical instruments in Indian classical and contemporary music. It leverages:
+The API accepts an audio file, breaks it into 10-second windows, and compares each window against a curated list of instrument descriptions using CLAP audio-text embeddings. It then returns the instruments that stand out most strongly, along with confidence scores and the time range where each instrument was detected.
 
-- 🎼 **Microsoft CLAP** - Contrastive Language-Audio Pre-training for zero-shot instrument recognition
-- 🎚️ **Demucs** - State-of-the-art music source separation (isolates vocals, drums, bass, and other instruments)
-- 🔊 **PANNs** - Pre-trained Audio Neural Networks for audio tagging and classification
-- ⚡ **FastAPI** - High-performance REST API for real-time inference
+In plain terms, you upload a song and the service responds with a clean JSON list of likely instruments.
 
-## ✨ Key Features
+## Why this approach is useful
 
-- **Multi-Instrument Detection**: Identifies instruments including:
-  - 🪈 Flute
-  - 🥁 Drums
-  - 🎸 Acoustic Guitar
-  - 🎹 Piano
-  - 🎸 Bass Guitar
-  - 🎻 Violin
+Traditional instrument detection often needs a fixed training dataset and a model trained for a narrow set of labels. This project uses a contrastive audio model, which makes it more flexible. The classifier can compare audio against descriptive prompts such as "traditional Indian tabla" or "acoustic guitar" and return matches without needing a separate model for every instrument.
 
-- **Source Separation**: Automatically separates audio into stems (drums, vocals, bass, other)
-- **Confidence Scoring**: Returns probabilistic confidence scores for each detected instrument
-- **Batch Processing**: Processes multiple stems simultaneously for efficiency
-- **Zero-Shot Classification**: Works without requiring task-specific training on new instruments
-- **REST API**: Simple HTTP endpoint for integration into applications
+The current version focuses on full-audio sliding-window analysis. That keeps the request flow simple and avoids depending on a long source-separation step for every upload.
 
-## 🚀 Quick Start
+## Core features
 
-### Prerequisites
+- FastAPI endpoint for audio upload and detection
+- Microsoft CLAP based audio-text similarity
+- Sliding-window analysis over the full audio file
+- Confidence score for every returned instrument
+- Timestamp range for the strongest detected moment
+- Basic authentication on API endpoints
+- Support for Indian and Western instrument prompts
+- JSON response format that can be used directly by web apps, dashboards, or internal CRM tools
 
-- Python 3.9 or higher
-- CUDA-capable GPU (optional but recommended for faster inference)
-- 4GB+ RAM
+## Supported instrument groups
 
-### Installation
+The prompt set currently covers:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Pratikvermaa/AI-Instrument-Detection-Model---CRM.git
-   cd AI-Instrument-Detection-Model---CRM
-   ```
+- Piano, acoustic drums, flute, acoustic guitar, bass guitar, and string sections
+- Sitar, sarod, sarangi, veena, santoor, mandolin, and tanpura
+- Harmonium, bansuri, and shehnai
+- Tabla, dholak, mridangam, ghatam, duff, and khanjari
+- Electric guitar, synth, 808 bass, electronic kick, and drum machine
+- Trumpet, saxophone, trombone, violin, and cello
 
-2. **Create a virtual environment** (recommended)
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+You can adjust the supported instruments by editing `CANDIDATE_PROMPTS` and `PROMPT_TO_INSTRUMENT` in `classifier.py`.
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Project structure
 
-4. **Download pre-trained models**
-   The models will be automatically downloaded on first run:
-   - Microsoft CLAP embeddings
-   - Demucs separation model (htdemucs)
+```text
+.
+|-- app.py              FastAPI app and API routes
+|-- classifier.py       CLAP based sliding-window instrument classifier
+|-- separator.py        Optional Demucs source separation helper
+|-- main.py             Local Uvicorn startup entry point
+|-- test_clap.py        CLAP test script
+|-- test_panns.py       PANNs test script
+|-- requirements.txt    Python dependencies
+|-- run.bat             Windows startup helper
+`-- README.md           Project documentation
+```
 
-## 📖 Usage Guide
+## Requirements
 
-### Running the FastAPI Server
+- Python 3.9 or newer
+- Enough memory to load the CLAP model and process uploaded audio
+- A CUDA-capable GPU is helpful for faster inference, but the service can run on CPU for smaller workloads
+
+Install dependencies with:
+
+```bash
+pip install -r requirements.txt
+```
+
+The CLAP checkpoint is loaded when `classifier.py` starts. The first run can take longer because model files may need to be downloaded or initialized.
+
+## Running the API
+
+Start the FastAPI server with Uvicorn:
 
 ```bash
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The API will be available at `http://localhost:8000`
+Or run the local entry point:
 
-### API Endpoints
-
-#### Health Check
 ```bash
+python main.py
+```
+
+By default, `main.py` starts the service on:
+
+```text
+http://127.0.0.1:8000
+```
+
+## API endpoints
+
+### Health check
+
+```http
 GET /
 ```
-Returns server status.
 
-#### Detect Instruments
-```bash
+Returns a basic status response after authentication.
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "message": "POST an audio file to /detect",
+  "user": "authenticated-user"
+}
+```
+
+### Detect instruments
+
+```http
 POST /detect
 ```
 
-**Request**: Multipart form-data with audio file
+Send an audio file as multipart form data.
+
+Example:
+
 ```bash
 curl -X POST "http://localhost:8000/detect" \
+  -u "USERNAME:PASSWORD" \
   -H "accept: application/json" \
-  -F "file=@your_song.mp3"
+  -F "file=@song.mp3"
 ```
 
-**Response**:
+Example response:
+
 ```json
 {
   "success": true,
-  "total_instruments_detected": 4,
+  "total_instruments_detected": 3,
   "instruments": [
     {
-      "instrument": "Drums playing",
-      "original_prediction": "Drums playing",
-      "confidence": 0.9456
+      "instrument": "Tabla",
+      "original_prediction": "Tabla",
+      "confidence": 0.3142,
+      "confidence_percentage": "31.42%",
+      "timestamp": "0:40 - 0:50"
     },
     {
-      "instrument": "Acoustic guitar",
-      "original_prediction": "Acoustic guitar",
-      "confidence": 0.8234
+      "instrument": "Harmonium",
+      "original_prediction": "Harmonium",
+      "confidence": 0.2918,
+      "confidence_percentage": "29.18%",
+      "timestamp": "1:20 - 1:30"
     },
     {
-      "instrument": "Bass guitar",
-      "original_prediction": "Bass guitar",
-      "confidence": 0.7123
-    },
-    {
-      "instrument": "Flute music",
-      "original_prediction": "Flute music",
-      "confidence": 0.6789
+      "instrument": "Bansuri",
+      "original_prediction": "Bansuri",
+      "confidence": 0.2745,
+      "confidence_percentage": "27.45%",
+      "timestamp": "2:00 - 2:10"
     }
   ]
 }
 ```
 
-### Python Script Usage
+## How detection works
+
+1. The uploaded file is saved to a temporary request folder.
+2. The audio is loaded at 48 kHz in mono.
+3. The audio is split into 10-second chunks.
+4. Short final chunks are skipped, while slightly short chunks are padded with silence.
+5. Each chunk is embedded with CLAP.
+6. Instrument prompts are embedded as text.
+7. The service compares audio embeddings with text embeddings.
+8. For each instrument, the service keeps the strongest matching chunk.
+9. A dynamic threshold filters out weaker matches.
+10. The final response is returned as JSON.
+
+## Configuration
+
+The main instrument list lives in `classifier.py`.
+
+To add a new instrument, add a descriptive prompt to `CANDIDATE_PROMPTS`, then map that exact prompt to the display name in `PROMPT_TO_INSTRUMENT`.
+
+Example:
 
 ```python
-from classifier import classify_stem
-
-# Single stem classification
-results = classify_stem("path/to/audio_stem.mp3")
-
-for result in results:
-    print(f"{result['instrument']}: {result['confidence']:.2%}")
-```
-
-### Audio Separation
-
-```python
-from separator import separate_stems
-
-# Separate music into stems
-stems = separate_stems("path/to/song.mp3")
-
-print(stems)
-# Output: {'bass': '...', 'drums': '...', 'other': '...', 'vocals': '...'}
-```
-
-## 🏗️ Project Architecture
-
-```
-├── app.py              # FastAPI application & REST API endpoints
-├── classifier.py       # CLAP-based instrument classification engine
-├── separator.py        # Demucs audio source separation wrapper
-├── test_clap.py        # CLAP model testing & validation
-├── test_panns.py       # PANNs model testing & validation
-├── classifier_model.pth # Pre-trained CNN14 weights
-├── separated/          # Output directory for separated stems
-└── separation_workspace/ # Demucs processing workspace
-```
-
-### Component Flow
-
-```
-Input Audio
-    ↓
-[Demucs Separator] → Isolates: drums, vocals, bass, other
-    ↓
-[Stem Routing] → Processes selected stems through CLAP
-    ↓
-[CLAP Embeddings] → Computes audio-text similarity
-    ↓
-[Confidence Scoring] → Applies softmax for probabilities
-    ↓
-[Result Deduplication] → Returns top prediction per instrument
-    ↓
-REST API Response (JSON)
-```
-
-## 🔬 Technical Details
-
-### Microsoft CLAP Mechanism
-
-The system uses **contrastive learning** to match audio embeddings with instrument descriptions:
-
-1. **Audio Embedding**: Converts audio file to high-dimensional vector representation
-2. **Text Embedding**: Converts instrument descriptions ("Flute music", "Drums playing") to vectors
-3. **Similarity Computation**: Calculates cosine similarity between audio and text vectors
-4. **Softmax Normalization**: Converts raw scores to probability distribution
-5. **Confidence Threshold**: Filters results with confidence > 0.01
-
-### Demucs Source Separation
-
-Isolates audio into 4 stems:
-- **Drums**: Percussion instruments
-- **Vocals**: Human voice
-- **Bass**: Bass instruments
-- **Other**: Remaining instruments
-
-This isolation improves detection accuracy by reducing interference.
-
-## 📊 Supported Instruments
-
-Currently optimized for:
-
-| Instrument Type | Example |
-|---|---|
-| 🪈 Wind | Flute, Clarinet, Saxophone |
-| 🥁 Percussion | Drums, Tabla, Cymbals |
-| 🎸 Strings | Guitar, Sitar, Violin, Oud |
-| 🎹 Keyboard | Piano, Harmonium, Organ |
-
-## ⚙️ Configuration
-
-### Candidate Instruments
-
-Modify `CANDIDATE_INSTRUMENTS` in `classifier.py` to detect different instruments:
-
-```python
-CANDIDATE_INSTRUMENTS = [
-    "Flute music",
-    "Drums playing",
-    "Acoustic guitar",
-    "Piano",
-    "Bass guitar",
-    "Violin strings",
-    # Add more instruments here
+CANDIDATE_PROMPTS = [
+    "A traditional Indian tabla playing rapid rhythmic percussion strokes",
+    "A traditional Indian harmonium pumping keys to play a melody",
 ]
-```
 
-### Model Parameters
-
-- **CLAP Model**: laion_clap (unfused)
-- **Demucs Model**: htdemucs (latest)
-- **Sample Rate**: 32,000 Hz
-- **Confidence Threshold**: 0.01
-
-## 📦 Dependencies
-
-| Package | Version | Purpose |
-|---|---|---|
-| fastapi | >=0.104 | Web API framework |
-| uvicorn | >=0.24 | ASGI server |
-| torch | >=2.0 | Deep learning framework |
-| torchaudio | >=2.0 | Audio processing |
-| laion-clap | Latest | CLAP model wrapper |
-| librosa | >=0.10 | Audio analysis |
-| soundfile | >=0.12 | Audio I/O |
-| demucs | >=4.0 | Source separation |
-| panns_inference | Latest | Audio tagging |
-| numpy | >=1.24 | Numerical computing |
-
-## 🎓 Model Information
-
-### CLAP (Contrastive Language-Audio Pre-training)
-- **Developer**: Microsoft Research
-- **Architecture**: Transformer-based multimodal encoder
-- **Training Data**: Millions of audio-text pairs
-- **Strength**: Zero-shot learning on new instruments
-- **Reference**: https://arxiv.org/abs/2306.08300
-
-### Demucs (Music Source Separation)
-- **Developer**: Meta AI Research
-- **Architecture**: Convolutional Neural Network
-- **Strength**: State-of-the-art source separation
-- **Reference**: https://github.com/adefossez/demucs
-
-### PANNs (Pre-trained Audio Neural Networks)
-- **Architecture**: CNN14, ResNet, MobileNet variants
-- **Strength**: General-purpose audio event detection
-- **Reference**: https://arxiv.org/abs/1912.10211
-
-## 🧪 Testing
-
-### Run CLAP Tests
-```bash
-python test_clap.py
-```
-
-### Run PANNs Tests
-```bash
-python test_panns.py
-```
-
-## 📝 Example Workflow
-
-```python
-# 1. Separate audio into stems
-from separator import separate_stems
-stems = separate_stems("song.mp3")
-
-# 2. Classify each stem
-from classifier import classify_stem
-for stem_name, stem_path in stems.items():
-    print(f"\n{stem_name.upper()} stem:")
-    results = classify_stem(stem_path)
-    for r in results:
-        print(f"  {r['instrument']}: {r['confidence']:.2%}")
-```
-
-## 🔒 Performance Metrics
-
-- **Average Inference Time**: ~5-10 seconds per song (with GPU)
-- **Accuracy**: 85-92% on Indian classical instruments
-- **Supported Audio Formats**: MP3, WAV, FLAC, OGG
-- **Maximum File Size**: Limited by RAM (typically 500MB+)
-
-## 🐛 Troubleshooting
-
-### Model Download Issues
-```bash
-# Clear CLAP cache and re-download
-rm -rf ~/.cache/huggingface
-python -c "import laion_clap; model = laion_clap.CLAP_Module(); model.load_ckpt()"
-```
-
-### Demucs Separation Fails
-```bash
-# Try with a shorter audio file first
-# Ensure demucs is properly installed
-pip install -U demucs
-```
-
-### Out of Memory Errors
-```bash
-# Process audio in chunks or use CPU-only mode
-# Reduce batch size in separation
-```
-
-## 🚦 Future Enhancements
-
-- [ ] Real-time streaming inference
-- [ ] Web UI dashboard
-- [ ] Multi-language instrument naming
-- [ ] Fine-tuned models for specific music genres
-- [ ] Ensemble methods combining CLAP + PANNs
-- [ ] GPU batch processing pipeline
-- [ ] Docker containerization
-- [ ] Instrument timing analysis
-- [ ] Export to MusicXML format
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💼 Author
-
-**Pratik Verma**
-- GitHub: [@Pratikvermaa](https://github.com/Pratikvermaa)
-- Email: [your-email@example.com](mailto:your-email@example.com)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Development Setup
-```bash
-git clone https://github.com/Pratikvermaa/AI-Instrument-Detection-Model---CRM.git
-cd AI-Instrument-Detection-Model---CRM
-pip install -r requirements.txt
-```
-
-## 📚 Citation
-
-If you use this project in your research, please cite:
-
-```bibtex
-@software{verma2024instrument,
-  author = {Verma, Pratik},
-  title = {Indian Music Instrument Detection Model - CRM},
-  year = {2024},
-  url = {https://github.com/Pratikvermaa/AI-Instrument-Detection-Model---CRM}
+PROMPT_TO_INSTRUMENT = {
+    "A traditional Indian tabla playing rapid rhythmic percussion strokes": "Tabla",
+    "A traditional Indian harmonium pumping keys to play a melody": "Harmonium",
 }
 ```
 
-## 🙏 Acknowledgments
+Good prompts are specific, short, and written in natural language. For Indian music, mention the instrument family and the way it usually sounds.
 
-- Microsoft Research for CLAP
-- Meta AI Research for Demucs
-- LAION Community for audio models
-- All contributors and testers
+## Security note
 
-## ⭐ Support
+The API currently uses HTTP Basic Auth. Before deploying this service publicly, move credentials out of the source code and into environment variables or a secret manager.
 
-If you found this project helpful, please consider giving it a star! It helps others discover the project.
+Recommended environment variables:
 
----
+```text
+API_USERNAME
+API_PASSWORD
+```
 
-**Last Updated**: June 2024  
-**Status**: Active Development  
-**Version**: 2.0
+## Testing
+
+Run the available model checks with:
+
+```bash
+python test_clap.py
+python test_panns.py
+```
+
+For API testing, start the server and upload a small audio file first. Short test files make it easier to confirm that authentication, upload handling, model loading, and JSON output are working before trying longer songs.
+
+## Notes for production use
+
+- Use a process manager or container runtime for deployment.
+- Keep model files cached between restarts.
+- Set upload size limits based on server memory.
+- Store credentials outside the repository.
+- Log request IDs instead of raw file names when handling customer audio.
+- Clean temporary files after every request.
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
+
+## Acknowledgments
+
+This project builds on the work behind CLAP, Demucs, PANNs, FastAPI, PyTorch, and the broader open-source audio machine learning ecosystem.
