@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="theme-color" content="#05070d">
+  <meta name="description" content="Instrument Intelligence Console — a motion-first frontend for the FastAPI + CLAP instrument detection service.">
+  <title>Instrument Intelligence Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="noise"></div><div class="grid"></div><div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>INSTRUMENT</strong><em>INTELLIGENCE</em></span></a>
+    <div class="system-strip"><span class="status-dot"></span><span id="systemStatus">API DISCONNECTED</span><span class="divider"></span><span>CLAP / 48KHZ / 10S WINDOWS</span></div>
+    <button class="ghost-btn" id="openAccessBtn" type="button">◈ API ACCESS</button>
+  </header>
+
+  <main class="shell">
+    <aside class="rail">
+      <div class="rail-label">CONSOLE</div>
+      <button class="rail-btn active" type="button" data-target="analysis"><b>01</b>ANALYSIS</button>
+      <button class="rail-btn" type="button" data-target="results"><b>02</b>RESULTS</button>
+      <button class="rail-btn" type="button" data-target="system"><b>03</b>SYSTEM</button>
+      <div class="rail-footer"><span class="pulse-line"></span>ONLINE MODE</div>
+    </aside>
+
+    <section class="workspace">
+      <section class="hero" id="analysis">
+        <div class="eyebrow"><span class="eyebrow-line"></span>AUDIO / MULTIMODAL CLASSIFICATION</div>
+        <div class="hero-row">
+          <div>
+            <h1>Hear the track.<br><span>Map the instruments.</span></h1>
+            <p class="hero-copy">Upload a song and let the existing FastAPI + CLAP engine identify the strongest instrument matches and the 10-second windows where they peak.</p>
+          </div>
+          <div class="hero-readout"><div class="readout-title">ENGINE</div><div class="readout-value">CLAP</div><div class="readout-meta">AUDIO ↔ TEXT EMBEDDINGS</div></div>
+        </div>
+      </section>
+
+      <section class="console-grid">
+        <div class="main-column">
+          <article class="panel upload-panel">
+            <div class="panel-head"><div><span class="panel-kicker">01 / INPUT SIGNAL</span><h2>Audio intake</h2></div><span class="panel-code">MP3 · WAV · M4A · FLAC</span></div>
+
+            <label class="dropzone" id="dropzone" for="fileInput">
+              <input id="fileInput" type="file" accept="audio/*">
+              <div class="drop-ring ring-one"></div><div class="drop-ring ring-two"></div>
+              <div class="drop-core"><div class="upload-glyph"><span></span></div><strong id="dropTitle">DROP AUDIO HERE</strong><span id="dropSub">or click to browse your machine</span></div>
+              <div class="drop-scan"></div>
+            </label>
+
+            <div class="selected-file hidden" id="selectedFile">
+              <div class="file-icon">♫</div><div class="file-copy"><strong id="fileName">audio.mp3</strong><span id="fileMeta">0 MB · audio</span></div>
+              <button class="mini-btn" id="clearFileBtn" type="button">CLEAR</button>
+            </div>
+
+            <div class="wave-shell hidden" id="waveShell">
+              <div class="wave-head"><span>LIVE SIGNAL PREVIEW</span><span id="durationLabel">00:00</span></div>
+              <canvas id="waveform"></canvas><div class="wave-marker" id="waveMarker"></div>
+            </div>
+
+            <div class="action-row"><button class="primary-btn" id="analyzeBtn" type="button" disabled><span class="btn-glow"></span><span id="analyzeLabel">ANALYZE AUDIO</span><span class="btn-arrow">→</span></button><button class="secondary-btn" id="resetBtn" type="button">RESET CONSOLE</button></div>
+          </article>
+
+          <article class="panel process-panel hidden" id="processPanel">
+            <div class="panel-head"><div><span class="panel-kicker">02 / PIPELINE</span><h2>Inference sequence</h2></div><span class="processing-badge">PROCESSING</span></div>
+            <div class="process-list">
+              <div class="process-step" data-step="0"><span class="step-index">01</span><div><strong>Upload received</strong><small>FastAPI request payload accepted</small></div><span class="step-state">WAITING</span></div>
+              <div class="process-step" data-step="1"><span class="step-index">02</span><div><strong>Segmenting audio</strong><small>48 kHz mono · 10-second windows</small></div><span class="step-state">WAITING</span></div>
+              <div class="process-step" data-step="2"><span class="step-index">03</span><div><strong>Embedding audio</strong><small>CLAP audio feature extraction</small></div><span class="step-state">WAITING</span></div>
+              <div class="process-step" data-step="3"><span class="step-index">04</span><div><strong>Matching prompts</strong><small>Audio ↔ instrument text similarity</small></div><span class="step-state">WAITING</span></div>
+              <div class="process-step" data-step="4"><span class="step-index">05</span><div><strong>Dynamic threshold</strong><small>Filtering weaker instrument matches</small></div><span class="step-state">WAITING</span></div>
+            </div>
+            <div class="progress-track"><div class="progress-value" id="pipelineProgress"></div></div>
+          </article>
+
+          <article class="panel results-panel" id="results">
+            <div class="panel-head"><div><span class="panel-kicker">03 / OUTPUT</span><h2>Detection matrix</h2></div><span class="results-count" id="resultsCount">0 DETECTED</span></div>
+            <div class="metric-grid">
+              <div class="metric-card"><span>INSTRUMENTS</span><strong id="metricInstruments">—</strong><small>returned by API</small></div>
+              <div class="metric-card"><span>TOP MATCH</span><strong id="metricTop">—</strong><small>highest CLAP score</small></div>
+              <div class="metric-card"><span>PEAK SCORE</span><strong id="metricScore">—</strong><small>raw cosine similarity</small></div>
+              <div class="metric-card"><span>WINDOW</span><strong>10 SEC</strong><small>analysis segment</small></div>
+            </div>
+            <div class="result-stack" id="resultStack"><div class="empty-state"><span class="empty-orbit"></span><strong>NO ANALYSIS YET</strong><span>Upload audio and run the classifier to populate the matrix.</span></div></div>
+          </article>
+
+          <article class="panel timeline-panel hidden" id="timelinePanel">
+            <div class="panel-head"><div><span class="panel-kicker">04 / TEMPORAL MAP</span><h2>Instrument timeline</h2></div><span class="panel-code">MAX-POOLED PEAKS</span></div>
+            <div class="timeline" id="timeline"></div>
+          </article>
+        </div>
+
+        <aside class="side-column">
+          <article class="panel advisor-panel" id="system">
+            <div class="panel-head"><div><span class="panel-kicker">AI SYSTEM</span><h2>Signal monitor</h2></div><span class="monitor-badge"><i></i> LIVE</span></div>
+            <div class="monitor-orb"><div class="orb-core"></div><div class="orb-ring r1"></div><div class="orb-ring r2"></div><div class="orb-ring r3"></div><div class="orb-sweep"></div><span>CLAP</span></div>
+            <div class="signal-list"><div><span>MODEL</span><strong>CLAP</strong></div><div><span>INPUT</span><strong>48 KHZ MONO</strong></div><div><span>WINDOW</span><strong>10 SEC</strong></div><div><span>POOLING</span><strong>MAX</strong></div><div><span>FILTER</span><strong>DYNAMIC</strong></div></div>
+            <div class="console-note"><span class="note-mark">i</span><p>The UI exposes the backend's actual processing stages. Scores are similarity signals from the current classifier, not calibrated probabilities.</p></div>
+          </article>
+
+          <article class="panel access-panel hidden" id="accessPanel">
+            <div class="panel-head"><div><span class="panel-kicker">CREDENTIALS</span><h2>Connect API</h2></div><button class="close-btn" id="closeAccessBtn" type="button">×</button></div>
+            <p class="access-copy">Enter your existing FastAPI Basic Auth credentials. They stay in browser memory and are not written into the repository.</p>
+            <form id="accessForm">
+              <label><span>API BASE URL</span><input id="apiUrl" type="url" value="http://127.0.0.1:8000" required></label>
+              <label><span>USERNAME</span><input id="apiUser" type="text" autocomplete="username" required></label>
+              <label><span>PASSWORD</span><input id="apiPass" type="password" autocomplete="current-password" required></label>
+              <button class="primary-btn compact" type="submit"><span>TEST CONNECTION</span><span class="btn-arrow">→</span></button>
+            </form>
+            <div class="access-status" id="accessStatus"></div>
+          </article>
+        </aside>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer"><span>INSTRUMENT INTELLIGENCE CONSOLE</span><span>STATIC HTML + CSS + JS</span><span>MOTION ENGINE ENABLED</span></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/motion@13.4.0/dist/motion.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
