@@ -50,6 +50,8 @@ You can adjust the supported instruments by editing `CANDIDATE_PROMPTS` and `PRO
 |-- main.py             Local Uvicorn startup entry point
 |-- test_clap.py        CLAP test script
 |-- test_panns.py       PANNs test script
+|-- frontend/           Taal console: static web UI for the API (see frontend/README.md)
+|-- design-system/      Taal design system: tokens, components, brand guidelines
 |-- requirements.txt    Python dependencies
 |-- run.bat             Windows startup helper
 `-- README.md           Project documentation
@@ -88,6 +90,16 @@ By default, `main.py` starts the service on:
 ```text
 http://127.0.0.1:8000
 ```
+
+## Frontend
+
+The `frontend/` folder holds the Taal console, a static page with no build step. Serve it with:
+
+```bash
+python -m http.server 5500 --directory frontend
+```
+
+Then open `http://127.0.0.1:5500`, press **API access** and enter the API address and credentials. The design system it is built on lives in `design-system/` (start with `design-system/README.md`).
 
 ## API endpoints
 

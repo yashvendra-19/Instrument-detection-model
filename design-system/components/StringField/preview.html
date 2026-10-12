@@ -1,0 +1,9 @@
+<!-- @dsCard group="Signal" height=340 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div id="f" style="height:300px"></div>
+<script>
+var f=Taal.StringField(document.getElementById('f'));var p=new Taal.Player({duration:150,samples:Taal.synthPeaks(360,11)});p.on(function(t,b){if(p.playing)f.drive(b);});setTimeout(function(){p.play();},1500);
+</script>
+</body></html>

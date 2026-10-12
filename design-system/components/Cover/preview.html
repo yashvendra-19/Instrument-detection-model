@@ -1,0 +1,46 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html, body { margin: 0; height: 288px; background: var(--ground); overflow: hidden; }
+  .cover { position: relative; width: 960px; height: 288px; }
+  .cover svg { position: absolute; inset: 0; }
+  .volt { fill: var(--volt); }
+  .blue { fill: var(--fam-western); }
+  .aqua { fill: var(--fam-indian-wind); }
+  .magenta { fill: var(--fam-electronic); }
+  .violet { fill: var(--fam-brass); }
+  .str { stroke: var(--ground); stroke-width: 2; fill: none; stroke-linecap: round; }
+  .peg { fill: var(--ground); }
+  .text { position: absolute; left: 48px; bottom: 40px; width: 400px; }
+  .name { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 120px; line-height: .92; letter-spacing: -.06em; color: var(--ink); }
+  .name::after { content: ""; display: inline-block; width: 22px; height: 22px; margin-left: 8px; border-radius: 4px; background: var(--volt); }
+  .tag { margin: 16px 0 0; font-family: var(--font-sans); font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+</style></head>
+<body>
+<div class="cover">
+  <!--
+    blocks: volt 200x288 slab (brand), fam-western 120x168, fam-indian-wind 160x120, fam-brass 160x48, fam-electronic 280x120; square corners like the system's 2-4px marks
+    arrangement: flush modular grid from x=480 to the right edge, one tall slab with satellites
+    pattern: a few strings (rules) crossing the blocks, cut out in ground, one of them plucked; chosen because the README makes every result a string
+    steps and radii: string pitch space-7 (48px), pegs radius-pill, blocks on space-9/space-7/space-5 multiples
+  -->
+  <svg width="960" height="288" viewBox="0 0 960 288" aria-hidden="true">
+    <rect class="volt" x="480" y="0" width="200" height="288"/>
+    <rect class="blue" x="680" y="0" width="120" height="168"/>
+    <rect class="aqua" x="800" y="0" width="160" height="120"/>
+    <rect class="violet" x="800" y="120" width="160" height="48"/>
+    <rect class="magenta" x="680" y="168" width="280" height="120"/>
+    <path class="str" d="M504 48 L936 48"/>
+    <path class="str" d="M504 96 L936 96"/>
+    <path class="str" d="M504 144 Q640 196 936 144"/>
+    <path class="str" d="M504 192 L936 192"/>
+    <path class="str" d="M504 240 L936 240"/>
+    <circle class="peg" cx="504" cy="48" r="5"/><circle class="peg" cx="504" cy="96" r="5"/><circle class="peg" cx="504" cy="144" r="5"/><circle class="peg" cx="504" cy="192" r="5"/><circle class="peg" cx="504" cy="240" r="5"/>
+  </svg>
+  <div class="text">
+    <h1 class="name">Taal</h1>
+    <p class="tag">Every instrument in the song, as a signal you can see and pluck.</p>
+  </div>
+</div>
+</body></html>

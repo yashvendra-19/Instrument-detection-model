@@ -1,0 +1,9 @@
+<!-- @dsCard group="Input" height=360 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div style="padding:24px"><div id="z"></div></div>
+<script>
+var z=Taal.Dropzone(document.getElementById('z'),{onFile:function(f){z.setTitle('Loaded <em>'+Taal.esc(f.name)+'</em>');}});setTimeout(z.ripple,600);
+</script>
+</body></html>

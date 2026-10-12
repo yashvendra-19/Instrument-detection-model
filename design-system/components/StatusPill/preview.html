@@ -1,0 +1,9 @@
+<!-- @dsCard group="Status" height=110 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div style="padding:24px"><div style="display:flex;flex-wrap:wrap;gap:12px"><span id="a"></span><span id="b"></span><span id="c"></span></div></div>
+<script>
+Taal.StatusPill(document.getElementById('a'),{state:'online',text:'API online'});Taal.StatusPill(document.getElementById('b'),{state:'busy',text:'Inference running'});Taal.StatusPill(document.getElementById('c'),{state:'offline',text:'API not connected'});
+</script>
+</body></html>

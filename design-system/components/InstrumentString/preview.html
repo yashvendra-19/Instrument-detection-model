@@ -1,0 +1,9 @@
+<!-- @dsCard group="Results" height=330 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div style="padding:24px"><div id="l"></div></div>
+<script>
+var l=document.getElementById('l');Taal.SAMPLE.instruments.forEach(function(it,i){var r=document.createElement('div');l.appendChild(r);Taal.InstrumentString(r,{item:it,index:i,duration:150,maxPct:31.42,delay:i*140});});
+</script>
+</body></html>

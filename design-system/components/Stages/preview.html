@@ -1,0 +1,9 @@
+<!-- @dsCard group="Signal" height=240 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div style="padding:24px"><div id="s"></div></div>
+<script>
+var s=Taal.Stages(document.getElementById('s'));function loop(){s.run(new Promise(function(r){setTimeout(r,4200);}),520).then(function(){setTimeout(loop,1600);});}loop();
+</script>
+</body></html>

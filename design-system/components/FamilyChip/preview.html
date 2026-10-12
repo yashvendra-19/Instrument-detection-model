@@ -1,0 +1,9 @@
+<!-- @dsCard group="Results" height=140 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div style="padding:24px"><div id="row" style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
+<script>
+var row=document.getElementById('row');Taal.FAMILIES.forEach(function(f){var s=document.createElement('span');row.appendChild(s);Taal.FamilyChip(s,{family:f.id,label:f.label+' · '+f.members.length});});
+</script>
+</body></html>

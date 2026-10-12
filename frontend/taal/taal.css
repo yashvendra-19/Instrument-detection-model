@@ -1,0 +1,261 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@300..500&family=Instrument+Serif:ital@1&display=swap");
+
+/* Taal component layer. Colors, type, spacing, radii and shadows come from tokens.css.
+   Motion lives here and in Taal.motion because tokens.json has no motion family. */
+:root {
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --dur-press: 100ms;
+  --dur-hover: 200ms;
+  --dur-enter: 420ms;
+  --dur-reveal: 800ms;
+  --dur-draw: 1400ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+::selection { background: var(--volt); color: var(--on-volt); }
+
+.t-label {
+  font-family: var(--font-mono);
+  font-size: 11px; line-height: 14px; font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.t-label b { color: var(--volt-ink); font-weight: 500; }
+.t-accent { font-family: var(--font-accent); font-style: italic; font-weight: 400; letter-spacing: -.01em; }
+.t-grid {
+  background-image: radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 1.4px);
+  background-size: 24px 24px;
+}
+
+/* ---------- Button ---------- */
+.t-btn {
+  --btn-bg: transparent; --btn-ink: var(--ink); --btn-edge: var(--line-strong);
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  min-height: 44px; padding: 0 var(--space-5);
+  border: 1px solid var(--btn-edge); border-radius: var(--radius-md);
+  background: var(--btn-bg); color: var(--btn-ink);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; overflow: hidden; isolation: isolate; text-decoration: none;
+  transition: border-color var(--dur-hover), box-shadow var(--dur-hover), color var(--dur-hover);
+}
+.t-btn::before { /* ink flood from the pointer */
+  content: ""; position: absolute; z-index: -1; left: var(--mx, 50%); top: var(--my, 50%);
+  width: 0; height: 0; border-radius: 50%; background: var(--btn-flood, var(--well));
+  transform: translate(-50%, -50%); transition: width var(--dur-reveal) var(--ease-out), height var(--dur-reveal) var(--ease-out);
+}
+.t-btn:hover:not(:disabled)::before { width: 300%; height: 300%; }
+.t-btn:active:not(:disabled) { box-shadow: var(--shadow-press); }
+.t-btn:disabled { opacity: .45; cursor: not-allowed; }
+.t-btn .t-btn-arrow { display: inline-block; transition: transform var(--dur-hover) var(--ease-out); }
+.t-btn:hover:not(:disabled) .t-btn-arrow { transform: translateX(4px); }
+.t-btn--primary { --btn-bg: var(--volt); --btn-ink: var(--on-volt); --btn-edge: var(--volt); --btn-flood: var(--ink); }
+.t-btn--primary:hover:not(:disabled) { color: var(--ground); }
+.t-btn--quiet { --btn-bg: var(--surface-raised); }
+.t-btn--ghost { --btn-edge: transparent; min-height: 36px; padding: 0 var(--space-3); }
+.t-btn--ghost:hover:not(:disabled) { --btn-edge: var(--line-strong); }
+.t-btn.is-busy { box-shadow: var(--glow-volt); }
+.t-btn.is-busy::after { /* scan line while a request runs */
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(90deg, transparent, var(--well), transparent);
+  animation: t-scan 1.1s var(--ease-in-out) infinite;
+}
+@keyframes t-scan { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* ---------- Family chip & status pill ---------- */
+.t-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 3px var(--space-2); border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--surface);
+  font-family: var(--font-mono); font-size: 11px; line-height: 14px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted);
+}
+.t-chip i { width: 8px; height: 8px; border-radius: 2px; background: var(--fam, var(--ink-muted)); flex: none; }
+.t-pill {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 5px var(--space-3); border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong); color: var(--ink); background: var(--surface);
+  font-family: var(--font-mono); font-size: 11px; line-height: 14px; letter-spacing: .06em; text-transform: uppercase;
+}
+.t-pill i { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--state, var(--ink-muted)); }
+.t-pill i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: t-ping 1.6s var(--ease-out) infinite; }
+.t-pill[data-state="online"] { --state: var(--volt-ink); }
+.t-pill[data-state="busy"] { --state: var(--ink); }
+.t-pill[data-state="offline"] { --state: var(--alarm); }
+.t-pill[data-state="offline"] i::after { animation: none; }
+@keyframes t-ping { from { transform: scale(1); opacity: .7; } to { transform: scale(3.4); opacity: 0; } }
+
+/* ---------- Dropzone: radar rings ---------- */
+.t-drop {
+  position: relative; display: grid; place-items: center; min-height: 300px; padding: var(--space-6);
+  border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); background: var(--surface);
+  cursor: pointer; overflow: hidden; text-align: center;
+  transition: border-color var(--dur-hover), box-shadow var(--dur-hover);
+}
+.t-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 3; }
+.t-drop:hover, .t-drop.is-dragging { border-color: var(--volt-ink); border-style: solid; }
+.t-drop.is-dragging { box-shadow: var(--shadow-press); }
+.t-drop-rings { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.t-drop-rings span { position: absolute; left: 0; top: 0; border-radius: 50%; border: 1px solid var(--line); transform: translate(-50%, -50%); }
+.t-drop-rings span:nth-child(1) { width: 120px; height: 120px; border-color: var(--line-strong); }
+.t-drop-rings span:nth-child(2) { width: 220px; height: 220px; }
+.t-drop-rings span:nth-child(3) { width: 340px; height: 340px; border-style: dashed; }
+.t-drop-rings span:nth-child(4) { width: 480px; height: 480px; }
+.t-drop-rings span:nth-child(5) { width: 640px; height: 640px; }
+.t-drop-sweep { /* radar arm */
+  position: absolute; left: 50%; top: 50%; width: 340px; height: 340px; margin: -170px 0 0 -170px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 290deg, var(--well) 360deg);
+  animation: t-spin 6s linear infinite;
+}
+.t-drop:hover .t-drop-sweep, .t-drop.is-dragging .t-drop-sweep { animation-duration: 1.6s; }
+@keyframes t-spin { to { transform: rotate(1turn); } }
+.t-drop-core { position: relative; display: grid; justify-items: center; gap: var(--space-2); pointer-events: none; }
+.t-drop-core .t-drop-title { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 38px; letter-spacing: -.04em; }
+.t-drop-core .t-drop-title em { font-family: var(--font-accent); font-weight: 400; letter-spacing: -.01em; color: var(--volt-ink); }
+.t-drop-bindu { width: 12px; height: 12px; border-radius: 3px; background: var(--volt); box-shadow: var(--glow-volt); margin-bottom: var(--space-3); }
+
+/* ---------- Field ---------- */
+.t-field { display: grid; gap: var(--space-2); }
+.t-field input {
+  min-height: 42px; padding: 0 var(--space-4); border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong); background: var(--well); color: var(--ink);
+  font-family: var(--font-mono); font-size: 13px;
+  transition: border-color var(--dur-hover), box-shadow var(--dur-hover);
+}
+.t-field input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 2px var(--focus); }
+.t-field small { color: var(--ink-muted); font-size: 13px; line-height: 20px; }
+
+/* ---------- Waveform: window ruler, playhead, hover readout ---------- */
+.t-wave { position: relative; overflow: hidden; }
+.t-wave-plot { position: relative; cursor: crosshair; }
+.t-wave canvas { display: block; width: 100%; height: 132px; }
+.t-wave-cursor, .t-wave-head { position: absolute; top: 0; bottom: 0; left: 0; width: 1px; pointer-events: none; }
+.t-wave-cursor { background: var(--line-strong); opacity: 0; transition: opacity var(--dur-hover); }
+.t-wave-plot:hover .t-wave-cursor { opacity: 1; }
+.t-wave-cursor span {
+  position: absolute; top: 6px; left: 6px; white-space: nowrap; padding: 2px 6px; border-radius: var(--radius-xs);
+  background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink);
+  font-family: var(--font-mono); font-size: 11px; line-height: 14px;
+}
+.t-wave-cursor.is-flip span { left: auto; right: 6px; }
+.t-wave-head { width: 2px; background: var(--volt-ink); box-shadow: var(--glow-volt); margin-left: -1px; }
+.t-wave-ruler { position: relative; height: 22px; margin-top: var(--space-2); border-top: 1px solid var(--line); }
+.t-wave-ruler span {
+  position: absolute; top: 0; transform: translateX(-1px); white-space: nowrap;
+  padding: 4px 0 0 4px; border-left: 1px solid var(--line-strong);
+  font-family: var(--font-mono); font-size: 10px; line-height: 12px; color: var(--ink-muted);
+}
+.t-wave-ruler span.is-sam { border-left: 2px solid var(--volt-ink); color: var(--ink); }
+
+/* ---------- Transport ---------- */
+.t-transport { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.t-play {
+  position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex: none;
+  border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface-raised); color: var(--ink); cursor: pointer;
+  transition: border-color var(--dur-hover), box-shadow var(--dur-hover);
+}
+.t-play:hover { border-color: var(--volt-ink); }
+.t-play.is-playing { border-color: var(--volt-ink); box-shadow: var(--glow-volt); }
+.t-play svg { width: 16px; height: 16px; fill: currentColor; }
+.t-transport-time { font-family: var(--font-mono); font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; }
+.t-meter { display: flex; align-items: flex-end; gap: 3px; height: 24px; }
+.t-meter i { width: 4px; height: 100%; border-radius: 1px; background: var(--fam); transform-origin: 50% 100%; transform: scaleY(.08); }
+
+/* ---------- Stages: the inference pipeline ---------- */
+.t-stages { position: relative; display: grid; grid-template-columns: repeat(var(--n, 7), minmax(0, 1fr)); padding-top: 28px; }
+.t-stages-line { position: absolute; left: 6px; right: 0; top: 34px; height: 2px; background: var(--well); border-radius: var(--radius-pill); overflow: hidden; }
+.t-stages-line b { position: absolute; inset: 0; background: var(--volt-ink); transform-origin: 0 50%; transform: scaleX(0); }
+.t-stages-bead {
+  position: absolute; z-index: 2; left: 0; top: 28px; width: 14px; height: 14px; border-radius: 4px;
+  background: var(--volt); box-shadow: var(--glow-volt); opacity: 0;
+}
+.t-stage { position: relative; padding-right: var(--space-3); }
+.t-stage-dot {
+  position: relative; z-index: 1; width: 14px; height: 14px; border-radius: 4px;
+  background: var(--surface); border: 2px solid var(--line-strong);
+  transition: background var(--dur-hover), border-color var(--dur-hover);
+}
+.t-stage-num { position: absolute; top: -26px; left: 0; }
+.t-stage h4 { margin: var(--space-4) 0 var(--space-1); font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ink-muted); transition: color var(--dur-hover); }
+.t-stage p { margin: 0; color: var(--ink-muted); font-size: 13px; line-height: 18px; }
+.t-stage[data-status="active"] h4, .t-stage[data-status="done"] h4 { color: var(--ink); }
+.t-stage[data-status="done"] .t-stage-dot { background: var(--ink); border-color: var(--ink); }
+.t-stage-ms { display: block; margin-top: var(--space-2); font-family: var(--font-mono); font-size: 11px; line-height: 14px; color: var(--volt-ink); min-height: 14px; }
+@media (max-width: 760px) {
+  .t-stages { grid-template-columns: 1fr; gap: var(--space-4); padding-top: 0; padding-left: 28px; }
+  .t-stages-line { left: 6px; right: auto; top: 0; bottom: 0; width: 2px; height: auto; }
+  .t-stages-line b { transform-origin: 50% 0; transform: scaleY(0); }
+  .t-stages-bead { top: 0; left: 0; }
+  .t-stage { display: grid; grid-template-columns: auto 1fr; column-gap: var(--space-3); margin-left: -28px; }
+  .t-stage-num { position: static; grid-column: 2; }
+  .t-stage-dot { grid-row: 1 / span 4; margin-top: 2px; }
+  .t-stage h4, .t-stage p, .t-stage-ms { grid-column: 2; }
+  .t-stage h4 { margin-top: 0; }
+}
+
+/* ---------- Instrument string (result row) ---------- */
+.t-string {
+  position: relative; display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto; align-items: center; gap: var(--space-5);
+  padding: var(--space-4) var(--space-3); border-top: 1px solid var(--line); cursor: pointer;
+  transition: background var(--dur-hover);
+}
+.t-string:last-child { border-bottom: 1px solid var(--line); }
+.t-string:hover, .t-string.is-live { background: var(--surface); }
+.t-string.is-live::before { content: ""; position: absolute; left: 0; top: -1px; bottom: -1px; width: 2px; background: var(--fam); }
+.t-string-name { display: grid; gap: var(--space-1); min-width: 0; justify-items: start; }
+.t-string-name strong { max-width: 100%; font-family: var(--font-display); font-weight: 500; font-size: 28px; line-height: 32px; letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-string-canvas { position: relative; height: 56px; }
+.t-string-canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.t-string-score { display: grid; justify-items: end; gap: var(--space-1); min-width: 120px; }
+.t-string-score b { font-family: var(--font-mono); font-weight: 300; font-size: 44px; line-height: 44px; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.t-string-score b small { font-size: 18px; color: var(--ink-muted); margin-left: 2px; }
+.t-string-score span { font-family: var(--font-mono); font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+@media (max-width: 760px) {
+  .t-string { grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-4); }
+  .t-string-canvas { grid-column: 1 / -1; grid-row: 2; height: 44px; }
+  .t-string-name strong { font-size: 24px; line-height: 28px; }
+  .t-string-score b { font-size: 32px; line-height: 34px; }
+}
+
+/* ---------- Taal ring ---------- */
+.t-ring { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1; margin: 0 auto; }
+.t-ring svg { width: 100%; height: 100%; overflow: visible; }
+.t-ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.t-ring-center b { font-family: var(--font-mono); font-weight: 300; font-size: 64px; line-height: 60px; letter-spacing: -.05em; }
+.t-ring-center b.is-word { font-family: var(--font-display); font-weight: 600; font-size: 36px; line-height: 40px; letter-spacing: -.04em; }
+.t-ring .tick { stroke: var(--line-strong); stroke-width: 1; }
+.t-ring .tick.sam { stroke: var(--volt-ink); stroke-width: 3; }
+.t-ring .lane { fill: none; stroke: var(--well); }
+.t-ring .hit { fill: none; stroke-linecap: round; cursor: pointer; }
+.t-ring .hand { stroke: var(--volt-ink); stroke-width: 1.5; }
+.t-ring .hand-dot { fill: var(--volt); }
+.t-ring text { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-muted); }
+
+/* ---------- Metric tile ---------- */
+.t-metric { position: relative; display: grid; gap: var(--space-2); padding: var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); min-width: 0; overflow: hidden; }
+.t-metric b { font-family: var(--font-mono); font-weight: 300; font-size: 44px; line-height: 44px; letter-spacing: -.04em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-metric b.is-word { font-family: var(--font-display); font-weight: 600; font-size: 36px; letter-spacing: -.04em; }
+.t-metric small { color: var(--ink-muted); font-size: 13px; line-height: 20px; }
+
+/* ---------- String field (hero) ---------- */
+.t-field-strings { position: relative; width: 100%; height: 100%; touch-action: pan-y; }
+.t-field-strings canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---------- Text reveal ---------- */
+.t-split-word { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .12em; margin-bottom: -.12em; }
+.t-split-word > span { display: inline-block; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}

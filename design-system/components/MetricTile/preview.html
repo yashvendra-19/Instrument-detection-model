@@ -1,0 +1,9 @@
+<!-- @dsCard group="Results" height=170 -->
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body>
+<div style="padding:24px"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px"><div id="a"></div><div id="b"></div><div id="c"></div></div></div>
+<script>
+Taal.MetricTile(document.getElementById('a'),{label:'Instruments',caption:'above the threshold',value:3});Taal.MetricTile(document.getElementById('b'),{label:'Top match',caption:'highest similarity',value:'Tabla'});Taal.MetricTile(document.getElementById('c'),{label:'Peak score',caption:'raw cosine',value:0.3142,decimals:4});
+</script>
+</body></html>

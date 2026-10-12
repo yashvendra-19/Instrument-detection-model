@@ -1,62 +1,27 @@
-# Instrument Intelligence Console
+# Taal Console
 
-Static frontend for the existing FastAPI + CLAP instrument detection service.
-
-## Stack
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Motion's vanilla JavaScript API from the Motion ecosystem (used instead of React-only Framer Motion)
-- Web Audio API for the local waveform preview
-
-Framer Motion is designed around React. Because this project intentionally avoids React/Vite, this implementation uses the framework-agnostic Motion browser API so the code remains HTML + CSS + JS while retaining the same animation ecosystem.
+Front end for the FastAPI + CLAP instrument detection service, built on the Taal v2 design system.
 
 ## Run
-
-From the repository root:
 
 ```bash
 python -m http.server 5500 --directory frontend
 ```
 
-Open `http://127.0.0.1:5500`.
+Open http://127.0.0.1:5500, start the API (`uvicorn app:app --host 0.0.0.0 --port 8000`), press **API access**, and enter the address and Basic Auth credentials. Credentials stay in the tab's memory.
 
-Run the FastAPI backend separately:
+## What moves, and why
 
-```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
-```
+- Drop a file and press play: a Web Audio analyser splits it into seven frequency bands. Each band plucks and lights one family string in the hero, drives the meter, and moves the waveform playhead.
+- Analyze: the seven backend stages light up while the real `/detect` request runs, with measured timings.
+- Results: each instrument is a string that plucks when playback reaches its peak 10-second window; the ring hand follows playback.
+- Springs and scroll-linked motion come from Motion 11.11.17 (`taal/motion.js`, MIT). Reduced-motion settings are respected.
 
-## Connect
+## Files
 
-Click **API ACCESS**, enter the URL and the Basic Auth credentials for your running FastAPI service, then test the connection.
+- `taal/tokens.css`: tokens generated from `taal/tokens.json` (dark first, light via the OS setting or `data-theme="light"`)
+- `taal/motion.js`: Motion 11.11.17 UMD build
+- `taal/taal.css`, `taal/taal.js`: the Taal components and motion layer (`window.Taal`)
+- `app.css`, `app.js`, `index.html`: the console page
 
-The credentials are intentionally entered at runtime and are not hard-coded into the frontend.
-
-## What the frontend visualizes
-
-The UI mirrors the backend that is already in this repository:
-
-1. upload accepted by FastAPI
-2. 48 kHz mono audio loading
-3. 10-second sliding windows
-4. CLAP audio embeddings
-5. CLAP text prompt matching
-6. max pooling across windows
-7. dynamic threshold filtering
-
-The animated processing sequence is presentation feedback around the real request; the backend response remains the source of truth.
-
-## UI features
-
-- futuristic dark console layout
-- animated orbital system monitor
-- drag-and-drop audio intake
-- client-side waveform preview
-- animated inference pipeline
-- real detection result cards from `/detect`
-- confidence/match score visualization
-- timestamp timeline
-- responsive mobile layout
-- runtime FastAPI Basic Auth connection panel
+No build step. Fonts load from Google Fonts.

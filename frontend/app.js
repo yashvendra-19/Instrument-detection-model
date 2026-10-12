@@ -1,29 +1,234 @@
-const state={file:null,audioDuration:0,apiUrl:"http://127.0.0.1:8000",username:"",password:"",connected:false,analyzing:false};
-const palette=["#00e5ff","#3c7dff","#9b5cff","#ff2dd1","#ff7a00","#ffe600","#ff3158","#45ffbd"];
-const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-const statusDot=$("#statusDot"),systemStatus=$("#systemStatus"),fileInput=$("#fileInput"),dropzone=$("#dropzone"),selectedFile=$("#selectedFile"),fileName=$("#fileName"),fileMeta=$("#fileMeta"),clearFileBtn=$("#clearFileBtn"),waveShell=$("#waveShell"),waveform=$("#waveform"),durationLabel=$("#durationLabel"),waveMarker=$("#waveMarker"),analyzeBtn=$("#analyzeBtn"),analyzeLabel=$("#analyzeLabel"),resetBtn=$("#resetBtn"),processPanel=$("#processPanel"),pipelineProgress=$("#pipelineProgress"),timelinePanel=$("#timelinePanel"),resultStack=$("#resultStack"),resultsCount=$("#resultsCount"),accessPanel=$("#accessPanel"),accessForm=$("#accessForm"),accessStatus=$("#accessStatus"),apiUrlInput=$("#apiUrl"),apiUserInput=$("#apiUser"),apiPassInput=$("#apiPass"),dropTitle=$("#dropTitle"),dropSub=$("#dropSub"),openAccessBtn=$("#openAccessBtn"),cursorGlow=$("#cursorGlow");
-function motionAnimate(target,keyframes,options={}){return window.Motion?.animate?window.Motion.animate(target,keyframes,options):null}
-function setSystemState(mode,text){systemStatus.textContent=text;statusDot.style.background=mode==="online"?"var(--green)":mode==="busy"?"var(--cyan)":"var(--red)";statusDot.style.boxShadow=mode==="online"?"0 0 13px rgba(69,255,189,.7)":mode==="busy"?"0 0 13px rgba(0,229,255,.7)":"0 0 13px rgba(255,49,88,.7)"}
-function basicAuthHeader(){return"Basic "+btoa(unescape(encodeURIComponent(state.username+":"+state.password)))}
-function formatBytes(bytes){if(!bytes)return"0 B";const u=["B","KB","MB","GB"],i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return(bytes/Math.pow(1024,i)).toFixed(i?1:0)+" "+u[i]}
-function formatTime(seconds){const s=Math.max(0,Math.floor(Number(seconds)||0));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
-function parseTimestamp(t){const m=String(t||"").match(/(\d+):(\d+)\s*-\s*(\d+):(\d+)/);return m?{start:+m[1]*60+ +m[2],end:+m[3]*60+ +m[4]}:null}
-function normalizeConfidence(item){const raw=Number(item?.confidence);if(Number.isFinite(raw))return{raw,pct:Math.max(0,Math.min(100,raw*100))};const pct=Number(String(item?.confidence_percentage||"").replace("%",""));return Number.isFinite(pct)?{raw:pct/100,pct:Math.max(0,Math.min(100,pct))}:{raw:0,pct:0}}
-function getInstrument(item){return item?.instrument||item?.original_prediction||"Unknown instrument"}
-function escapeHtml(v){return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-function setAccessMessage(m,type=""){accessStatus.className="access-status "+type;accessStatus.textContent=m}
-function openAccess(show=true){if(show){accessPanel.classList.remove("hidden");motionAnimate(accessPanel,{opacity:[0,1],scale:[.97,1],y:[-16,0]},{duration:.4,ease:"ease-out"})}else accessPanel.classList.add("hidden")}
-function resetPipeline(){$$(".process-step").forEach(s=>{s.classList.remove("active","done");s.querySelector(".step-state").textContent="WAITING"});pipelineProgress.style.width="0%"}
-function updatePipeline(i,status){const s=document.querySelector('.process-step[data-step="'+i+'"]');if(!s)return;s.classList.toggle("active",status==="active");s.classList.toggle("done",status==="done");s.querySelector(".step-state").textContent=status==="done"?"DONE":"RUNNING";if(status==="active")motionAnimate(s,{x:[0,6]},{duration:.28})}
-function drawWaveform(samples=null){const ctx=waveform.getContext("2d"),dpr=devicePixelRatio||1,w=waveform.clientWidth||760,h=120;waveform.width=Math.round(w*dpr);waveform.height=Math.round(h*dpr);ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);ctx.strokeStyle="rgba(0,229,255,.08)";ctx.lineWidth=1;for(let y=17;y<h;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}const points=samples||Array.from({length:Math.max(100,Math.floor(w/4.6))},(_,i)=>.06+(Math.abs(Math.sin(i*.21))*.62+Math.abs(Math.cos(i*.047))*.38)*(.12+(i%19)/74));const bw=Math.max(1.3,w/points.length*.72),gap=w/points.length,g=ctx.createLinearGradient(0,0,w,0);g.addColorStop(0,"#00e5ff");g.addColorStop(.43,"#3c7dff");g.addColorStop(.7,"#9b5cff");g.addColorStop(1,"#ff2dd1");ctx.fillStyle=g;points.forEach((a,i)=>{const x=i*gap,hh=Math.max(2,a*(h-22));ctx.fillRect(x,h/2-hh/2,bw,hh)})}
-async function createAudioWaveform(file){const C=window.AudioContext||window.webkitAudioContext;if(!C){drawWaveform();return}try{const ac=new C(),buf=await ac.decodeAudioData((await file.arrayBuffer()).slice(0)),data=buf.getChannelData(0);state.audioDuration=buf.duration;durationLabel.textContent=formatTime(state.audioDuration);const n=Math.max(120,Math.min(460,Math.floor((waveform.clientWidth||760)/2.2))),size=Math.max(1,Math.floor(data.length/n)),samples=[];for(let i=0;i<n;i++){let max=0;const start=i*size,end=Math.min(data.length,start+size);for(let j=start;j<end;j+=Math.max(1,Math.floor(size/20)))max=Math.max(max,Math.abs(data[j]));samples.push(Math.min(1,max))}drawWaveform(samples);await ac.close()}catch{drawWaveform()}}
-function handleFile(file){if(!file||!file.type.startsWith("audio/")){setAccessMessage("Please select a valid audio file.","error");openAccess(true);return}state.file=file;selectedFile.classList.remove("hidden");waveShell.classList.remove("hidden");fileName.textContent=file.name;fileMeta.textContent=formatBytes(file.size)+" · "+(file.type||"audio");dropTitle.textContent="SIGNAL LOADED";dropSub.textContent="Ready for backend inference";analyzeBtn.disabled=false;motionAnimate(selectedFile,{opacity:[0,1],y:[15,0],scale:[.98,1]},{duration:.42,easing:"ease-out"});motionAnimate(waveShell,{opacity:[0,1],y:[8,0]},{duration:.45,delay:.07,easing:"ease-out"});createAudioWaveform(file)}
-function clearFile(){state.file=null;state.audioDuration=0;fileInput.value="";selectedFile.classList.add("hidden");waveShell.classList.add("hidden");dropTitle.textContent="DROP AUDIO HERE";dropSub.textContent="or click to browse your machine";analyzeBtn.disabled=true;durationLabel.textContent="00:00";waveMarker.style.display="none";drawWaveform()}
-async function connectAPI(){state.apiUrl=apiUrlInput.value.trim().replace(/\/$/,"");state.username=apiUserInput.value;state.password=apiPassInput.value;setAccessMessage("Connecting to FastAPI…");setSystemState("busy","CONNECTING API");try{const r=await fetch(state.apiUrl+"/",{headers:{Authorization:basicAuthHeader()}});if(!r.ok){if(r.status===401)throw new Error("401 Unauthorized — check Basic Auth credentials");throw new Error("HTTP "+r.status)}await r.json();state.connected=true;setAccessMessage("Connected. FastAPI health check passed.","success");setSystemState("online","API ONLINE");motionAnimate(openAccessBtn,{scale:[1,1.04,1]},{duration:.35});setTimeout(()=>openAccess(false),280)}catch(e){state.connected=false;setAccessMessage("Connection failed: "+e.message,"error");setSystemState("offline","API DISCONNECTED")}}
-async function runAnalysis(){if(!state.file){setAccessMessage("Select an audio file first.","error");openAccess(true);return}if(!state.connected){openAccess(true);setAccessMessage("Connect to FastAPI first, then run the classifier.","error");return}if(state.analyzing)return;state.analyzing=true;analyzeBtn.disabled=true;analyzeLabel.textContent="ANALYZING";processPanel.classList.remove("hidden");timelinePanel.classList.add("hidden");resetPipeline();resultStack.innerHTML='<div class="empty-state"><span class="empty-orbit"></span><strong>RUNNING INFERENCE</strong><span>Waiting for the real FastAPI + CLAP response…</span></div>';setSystemState("busy","INFERENCE RUNNING");motionAnimate(processPanel,{opacity:[0,1],y:[14,0],scale:[.985,1]},{duration:.45,easing:"ease-out"});const body=new FormData();body.append("file",state.file);try{const rp=fetch(state.apiUrl+"/detect",{method:"POST",headers:{Authorization:basicAuthHeader()},body});for(let i=0;i<5;i++){updatePipeline(i,"active");pipelineProgress.style.width=((i+1)/5)*82+"%";await new Promise(r=>setTimeout(r,380));updatePipeline(i,"done")}const r=await rp;if(!r.ok){let d="HTTP "+r.status;try{const j=await r.json();if(j?.detail)d=j.detail}catch{}throw new Error(d)}const payload=await r.json();pipelineProgress.style.width="100%";renderResults(payload);setSystemState("online","API ONLINE")}catch(e){setSystemState("offline","API ERROR");resultStack.innerHTML='<div class="empty-state"><strong>INFERENCE FAILED</strong><span>'+escapeHtml(e.message)+'</span></div>'}finally{state.analyzing=false;analyzeBtn.disabled=!state.file;analyzeLabel.textContent="ANALYZE AGAIN"}}
-function renderResults(payload){const results=Array.isArray(payload?.instruments)?payload.instruments:[];resultsCount.textContent=results.length+" DETECTED";$("#metricInstruments").textContent=results.length||"0";if(!results.length){$("#metricTop").textContent="—";$("#metricScore").textContent="—";resultStack.innerHTML='<div class="empty-state"><strong>NO MATCHES ABOVE THRESHOLD</strong><span>The backend returned no instrument candidates after dynamic filtering.</span></div>';timelinePanel.classList.add("hidden");return}const scores=results.map(normalizeConfidence),best=scores.reduce((b,x,i)=>x.pct>scores[b].pct?i:b,0),top=results[best];$("#metricTop").textContent=getInstrument(top);$("#metricScore").textContent=scores[best].raw.toFixed(3);resultStack.innerHTML="";results.forEach((item,i)=>{const score=normalizeConfidence(item),name=getInstrument(item),accent=palette[i%palette.length],card=document.createElement("div");card.className="result-card magnetic-tilt";card.style.setProperty("--accent",accent);card.innerHTML='<div class="result-main"><div class="result-top"><span class="result-name">'+escapeHtml(name)+'</span><span class="result-tag">MATCH #'+String(i+1).padStart(2,"0")+'</span></div><div class="score-line"><div class="score-track"><div class="score-fill"></div></div><span class="score-num">'+score.pct.toFixed(2)+'%</span></div><div class="result-sub"><span>raw '+score.raw.toFixed(4)+'</span><span>cosine similarity</span></div></div><div class="result-side"><span class="timestamp">'+escapeHtml(item.timestamp||"Peak window unavailable")+'</span></div>';resultStack.appendChild(card);motionAnimate(card,{opacity:[0,1],x:[-25,0],scale:[.97,1]},{duration:.5,delay:i*.08,easing:"ease-out"});motionAnimate(card.querySelector(".score-fill"),{width:["0%",score.pct+"%"]},{duration:1.05,delay:.18+i*.07,easing:"ease-out"});attachTilt(card)});renderTimeline(results)}
-function renderTimeline(results){const duration=Math.max(state.audioDuration||0,10),rows=[];results.forEach((item,i)=>{const p=parseTimestamp(item.timestamp);if(!p)return;const name=getInstrument(item),accent=palette[i%palette.length],left=Math.max(0,Math.min(98,p.start/duration*100)),width=Math.max(4,Math.min(100-left,(p.end-p.start)/duration*100));rows.push('<div class="timeline-row"><div class="timeline-label">'+escapeHtml(name)+'</div><div><div class="timeline-track"><span class="timeline-hit" style="left:'+left+'%;width:'+width+'%;--accent:'+accent+'"></span></div>'+(i===0?'<div class="timeline-scale"><span>00:00</span><span>'+escapeHtml(formatTime(duration/2))+'</span><span>'+escapeHtml(formatTime(duration))+'</span></div>':"")+'</div></div>')});if(!rows.length){timelinePanel.classList.add("hidden");return}timelinePanel.classList.remove("hidden");$("#timeline").innerHTML=rows.join("");motionAnimate(timelinePanel,{opacity:[0,1],y:[15,0],scale:[.985,1]},{duration:.5,easing:"ease-out"})}
-function attachTilt(el){el.addEventListener("mousemove",e=>{const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;motionAnimate(el,{rotateX:[y*-5],rotateY:[x*5],translateZ:[8]},{duration:.18,easing:"ease-out"})});el.addEventListener("mouseleave",()=>motionAnimate(el,{rotateX:[0],rotateY:[0],translateZ:[0]},{duration:.38,easing:"ease-out"}))}
-function resetConsole(){state.analyzing=false;resetPipeline();clearFile();processPanel.classList.add("hidden");timelinePanel.classList.add("hidden");resultsCount.textContent="0 DETECTED";$("#metricInstruments").textContent="—";$("#metricTop").textContent="—";$("#metricScore").textContent="—";resultStack.innerHTML='<div class="empty-state"><span class="empty-orbit"></span><strong>NO ANALYSIS YET</strong><span>Upload audio and run the classifier to populate the matrix.</span></div>';analyzeLabel.textContent="ANALYZE AUDIO";setSystemState(state.connected?"online":"offline",state.connected?"API ONLINE":"API DISCONNECTED")}
-function attachGlobalMotion(){document.querySelectorAll(".magnetic").forEach(el=>{el.addEventListener("mousemove",e=>{const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;motionAnimate(el,{x:[x*8],y:[y*6]},{duration:.16,easing:"ease-out"})});el.addEventListener("mouseleave",()=>motionAnimate(el,{x:[0],y:[0]},{duration:.38,easing:"ease-out"}))});document.querySelectorAll(".magnetic-tilt").forEach(attachTilt)}
-fileInput.addEventListener("change",e=>handleFile(e.target.files?.[0]));["dragenter","dragover"].forEach(n=>dropzone.addEventListener(n,e=>{e.preventDefault();dropzone.classList.add("dragging")}));["dragleave","drop"].forEach(n=>dropzone.addEventListener(n,e=>{e.preventDefault();dropzone.classList.remove("dragging")}));dropzone.addEventListener("drop",e=>handleFile(e.dataTransfer.files?.[0]));clearFileBtn.addEventListener("click",clearFile);analyzeBtn.addEventListener("click",runAnalysis);resetBtn.addEventListener("click",resetConsole);openAccessBtn.addEventListener("click",()=>openAccess(true));$("#closeAccessBtn").addEventListener("click",()=>openAccess(false));accessForm.addEventListener("submit",e=>{e.preventDefault();connectAPI()});$$(".rail-btn").forEach(b=>b.addEventListener("click",()=>{$$(".rail-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.target)?.scrollIntoView({behavior:"smooth",block:"start"})}));document.addEventListener("mousemove",e=>{if(!cursorGlow)return;cursorGlow.style.left=e.clientX+"px";cursorGlow.style.top=e.clientY+"px";cursorGlow.style.opacity=".55"});attachGlobalMotion();motionAnimate(".eyebrow",{opacity:[0,1],x:[-25,0]},{duration:.55,easing:"ease-out"});motionAnimate("h1",{opacity:[0,1],y:[30,0],scale:[.97,1]},{duration:.75,delay:.08,easing:"ease-out"});motionAnimate(".hero-copy",{opacity:[0,1],y:[18,0]},{duration:.55,delay:.18,easing:"ease-out"});motionAnimate(".panel",{opacity:[0,1],y:[24,0],scale:[.985,1]},{duration:.6,delay:.1,easing:"ease-out"});drawWaveform();
+(function () {
+  "use strict";
+  var T = window.Taal, M = T.motion, $ = function (s) { return document.querySelector(s); };
+  var state = { file: null, samples: T.synthPeaks(360, 11), duration: 150, api: "http://127.0.0.1:8000", user: "", pass: "", connected: false, busy: false, ring: null, rows: [], player: null };
+
+  // ---------- theme: dark-first, follows the viewer until toggled
+  var root = document.documentElement, themeBtn = $("#themeBtn");
+  function currentTheme() {
+    var t = root.getAttribute("data-theme");
+    if (t) return t;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+  function paintThemeBtn() { var d = currentTheme() === "dark"; themeBtn.textContent = d ? "Light" : "Dark"; themeBtn.title = d ? "Switch to light theme" : "Switch to dark theme"; }
+  try { var saved = localStorage.getItem("taal-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  themeBtn.addEventListener("click", function () {
+    var next = currentTheme() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("taal-theme", next); } catch (e) {}
+    paintThemeBtn();
+  });
+  paintThemeBtn();
+
+  // ---------- sound toggle (starts from a click, as browsers require)
+  var soundBtn = $("#soundBtn");
+  soundBtn.addEventListener("click", function () {
+    T.sound.enabled = !T.sound.enabled;
+    soundBtn.setAttribute("aria-pressed", String(T.sound.enabled));
+    soundBtn.textContent = T.sound.enabled ? "Sound on" : "Sound off";
+    if (T.sound.enabled) T.pluckSound(0, 0.8);
+  });
+
+  // ---------- chrome and scroll-linked motion
+  var status = T.StatusPill($("#status"), { state: "offline", text: "API not connected" });
+  M.scrollLinked($("#bow"), { scaleX: [0, 1] });
+  M.scrollLinked($("#strings"), { y: [0, 70], opacity: [1, 0.3] }, { target: $(".hero"), offset: ["start start", "end start"] });
+  document.querySelectorAll(".t-btn").forEach(function (b) { M.magnetic(b, 0.25); });
+
+  // ---------- hero: one orchestrated entrance
+  var strings = T.StringField($("#strings"), {});
+  M.revealText($("#heroTitle"), { delay: 0.1 });
+  M.scramble($(".hero-kicker"), null, { delay: 0.2, duration: 0.9 });
+  [".hero-sub", ".hero-cta", "#heroStrings"].forEach(function (sel, i) {
+    M.animate($(sel), { opacity: [0, 1], y: [18, 0] }, Object.assign({}, M.SPRING.soft, { delay: 0.45 + i * 0.1 }));
+  });
+
+  // section heads: title words rise, labels decode, numbers settle, all once on entry; content is complete at rest
+  document.querySelectorAll(".sec-head").forEach(function (head) {
+    M.inView(head, function () {
+      M.revealText(head.querySelector(".sec-title"));
+      head.querySelectorAll(".t-label").forEach(function (l) { M.scramble(l, null, { duration: 0.6 }); });
+      M.scramble(head.querySelector(".sec-num"), null, { duration: 0.5 });
+      var note = head.querySelector(".sec-note");
+      if (note) M.animate(note, { opacity: [0, 1], x: [16, 0] }, Object.assign({}, M.SPRING.soft, { delay: 0.15 }));
+    }, { amount: 0.6 });
+  });
+
+  // ---------- intake + playback
+  var wave = T.Waveform($("#wave"), { duration: state.duration, samples: state.samples, onSeek: function (t) { if (state.player) state.player.seek(t); } });
+  var transport = T.Transport($("#transport"), { duration: state.duration, note: "Simulated playback of the example signal · silent", onToggle: togglePlay });
+  var drop = T.Dropzone($("#drop"), { onFile: takeFile });
+  function setPlayer(p, note) {
+    if (state.player) state.player.destroy();
+    state.player = p; transport.setPlaying(false); transport.setNote(note);
+    p.on(function (t, bands) {
+      transport.update(t, p.duration, bands);
+      wave.setTime(t);
+      if (p.playing) strings.drive(bands);
+      state.rows.forEach(function (r) { r.setTime(p.playing || t > 0 ? t : null); });
+      if (state.ring && (p.playing || t > 0)) state.ring.setTime(t);
+    });
+    transport.update(0, p.duration, null);
+  }
+  function togglePlay() {
+    var p = state.player; if (!p) return;
+    p.toggle().then(function () {
+      transport.setPlaying(p.playing);
+      $("#stringsHint").textContent = p.playing ? "Strings are following the audio · each band drives one family string" : "Run your cursor across the strings · one per instrument family";
+    }).catch(function () { transport.setNote("This browser blocked playback. Press play again."); });
+  }
+  setPlayer(new T.Player({ duration: state.duration, samples: state.samples }), "Simulated playback of the example signal · silent");
+
+  function setFileRow(kind, name, info) {
+    $("#fileKind").textContent = kind; $("#fileName").textContent = name; $("#fileInfo").textContent = info;
+    M.animate($("#fileName"), { opacity: [0, 1], y: [12, 0] }, M.SPRING.soft);
+  }
+  function takeFile(file) {
+    if (!file.type || file.type.indexOf("audio/") !== 0) { setFileRow("Not audio", file.name, "Choose an mp3, wav, m4a or flac file."); return; }
+    state.file = file; $("#clearBtn").hidden = false;
+    setFileRow("Your file", file.name, (file.size / 1048576).toFixed(1) + " MB · decoding…");
+    drop.setTitle("Loaded. Drop <em>another</em>?");
+    setPlayer(new T.Player({ file: file }), "Live: bands measured from your file in this browser");
+    T.decodePeaks(file, 480).then(function (d) {
+      state.duration = d.duration; state.samples = d.samples;
+      wave.set({ samples: d.samples, duration: d.duration });
+      transport.update(0, d.duration, null);
+      setFileRow("Your file", file.name, (file.size / 1048576).toFixed(1) + " MB · " + T.fmtTime(d.duration) + " · " + Math.ceil(d.duration / 10) + " windows");
+    }).catch(function () { setFileRow("Your file", file.name, (file.size / 1048576).toFixed(1) + " MB · preview unavailable, the API can still read it"); });
+    syncHint();
+  }
+  $("#clearBtn").addEventListener("click", function () {
+    state.file = null; state.duration = 150; state.samples = T.synthPeaks(360, 11); $("#clearBtn").hidden = true;
+    drop.setTitle("Drop a <em>song</em> here");
+    wave.set({ samples: state.samples, duration: 150 });
+    setPlayer(new T.Player({ duration: 150, samples: state.samples }), "Simulated playback of the example signal · silent");
+    setFileRow("Example signal", "No file yet", "Synthesised preview · 2:30");
+    syncHint();
+  });
+  function syncHint() {
+    $("#analyzeHint").textContent = !state.file ? "Choose a file, or play the README sample."
+      : !state.connected ? "Connect the API to analyze this file." : "Ready. The file goes to " + state.api + "/detect.";
+  }
+
+  // ---------- pipeline + results
+  var stages = T.Stages($("#stages"), {});
+  var mCount = T.MetricTile($("#mCount"), { label: "Instruments", caption: "above the dynamic threshold" });
+  var mTop = T.MetricTile($("#mTop"), { label: "Top match", caption: "highest similarity" });
+  var mPeak = T.MetricTile($("#mPeak"), { label: "Peak score", caption: "raw cosine similarity" });
+  var mWin = T.MetricTile($("#mWindows"), { label: "Windows", caption: "10 seconds each" });
+
+  function render(payload, source) {
+    var list = (payload && Array.isArray(payload.instruments)) ? payload.instruments : [];
+    $("#resultSource").textContent = source; M.scramble($("#resultSource"), source, { duration: 0.6 });
+    var host = $("#stringList"); host.innerHTML = ""; state.rows = [];
+    var maxEnd = 0; list.forEach(function (r) { var t = T.parseTimestamp(r.timestamp); if (t) maxEnd = Math.max(maxEnd, t.end); });
+    var duration = Math.max(state.duration, maxEnd);
+    mWin.set(Math.ceil(duration / 10));
+    if (!list.length) {
+      host.innerHTML = '<div class="empty">No instrument cleared the dynamic threshold for this track.</div>';
+      mCount.set(0); mTop.set("None"); mPeak.set(0, { decimals: 4 });
+    } else {
+      var best = list.reduce(function (a, b) { return T.confidenceOf(b).raw > T.confidenceOf(a).raw ? b : a; });
+      mCount.set(list.length); mTop.set(best.instrument); mPeak.set(T.confidenceOf(best).raw, { decimals: 4 });
+      var maxPct = T.confidenceOf(best).pct;
+      list.forEach(function (item, i) {
+        var row = document.createElement("div"); host.appendChild(row);
+        state.rows.push(T.InstrumentString(row, { item: item, index: i, duration: duration, maxPct: maxPct, delay: i * 0.14 }));
+      });
+    }
+    wave.setPeaks(list);
+    if (state.ring) state.ring.destroy();
+    state.ring = T.TaalRing($("#ringMount"), { results: list, duration: duration });
+    $("#legend").innerHTML = list.map(function (r, i) {
+      var f = T.familyOf(r.instrument);
+      return '<li style="--fam:var(--' + f.token + ')"><span class="ln">' + String(i + 1).padStart(2, "0") + '</span><span><strong>' + T.esc(r.instrument) + '</strong><br><span class="t-label"><span class="sw"></span>' + T.esc(f.label) + '</span></span><span class="data">' + T.esc(r.timestamp || "") + "</span></li>";
+    }).join("") || '<li><span></span><span class="muted">Nothing to place on the ring.</span><span></span></li>';
+    document.querySelectorAll("#legend li").forEach(function (li, i) { M.animate(li, { opacity: [0, 1], x: [18, 0] }, Object.assign({}, M.SPRING.soft, { delay: 0.9 + i * 0.1 })); });
+    paintMatrix(list);
+  }
+  function fail(err) { $("#stringList").innerHTML = '<div class="fail"><strong>FAILED</strong>' + T.esc(err.message || String(err)) + "</div>"; }
+
+  // ---------- matrix of all 32 prompts; detected cells pop on a spring
+  function paintMatrix(list) {
+    var hits = {}; list.forEach(function (r) { hits[String(r.instrument).toLowerCase()] = true; });
+    $("#matrixGrid").innerHTML = T.FAMILIES.map(function (f) {
+      return '<div class="fam" style="--fam:var(--' + f.token + ')"><h3 class="t-label"><i></i>' + T.esc(f.label) + " · " + f.members.length + "</h3><ul>" +
+        f.members.map(function (m) { return '<li class="' + (hits[m.toLowerCase()] ? "hit" : "") + '">' + T.esc(m) + "</li>"; }).join("") + "</ul></div>";
+    }).join("");
+    document.querySelectorAll("#matrixGrid li.hit").forEach(function (li, i) { M.animate(li, { scale: [0.6, 1], opacity: [0, 1] }, Object.assign({}, M.SPRING.bouncy, { delay: 0.3 + i * 0.12 })); });
+  }
+
+  // ---------- run
+  function go(promise, source) {
+    if (state.busy) return;
+    state.busy = true; $("#analyzeBtn").disabled = true; $("#ctaSample").disabled = true;
+    $("#analyzeBtn").classList.add("is-busy"); $("#analyzeLabel").textContent = "Listening…";
+    status.set("busy", "Inference running");
+    document.getElementById("pipeline").scrollIntoView({ behavior: M.reduced() ? "auto" : "smooth", block: "start" });
+    stages.run(promise, 480).then(function (payload) {
+      render(payload, source);
+      status.set(state.connected ? "online" : "offline", state.connected ? "API online" : "API not connected");
+      setTimeout(function () { document.getElementById("results").scrollIntoView({ behavior: M.reduced() ? "auto" : "smooth", block: "start" }); }, 450);
+    }).catch(function (e) {
+      fail(e); status.set("offline", "Request failed");
+      document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    }).then(function () {
+      state.busy = false; $("#analyzeBtn").disabled = false; $("#ctaSample").disabled = false;
+      $("#analyzeBtn").classList.remove("is-busy"); $("#analyzeLabel").textContent = "Analyze again";
+    });
+  }
+  function sample() {
+    go(new Promise(function (r) { setTimeout(function () { r(T.SAMPLE); }, 3600); }), "README sample response · not a real analysis");
+  }
+  $("#ctaSample").addEventListener("click", sample);
+  $("#analyzeBtn").addEventListener("click", function () {
+    if (!state.file) { sample(); return; }
+    if (!state.connected) { openDrawer(); return; }
+    go(T.api.detect(state.api, state.user, state.pass, state.file).catch(function (e) {
+      throw e instanceof TypeError ? new Error("The browser could not reach " + state.api + ". Check the address, that the API is running, and that this page may call it.") : e;
+    }), "Live response · " + state.file.name);
+  });
+
+  // ---------- API drawer
+  var drawer = $("#drawer"), scrim = $("#scrim"), lastFocus = null;
+  var fUrl = T.Field($("#fUrl"), { id: "apiUrl", label: "API address", type: "url", value: state.api });
+  var fUser = T.Field($("#fUser"), { id: "apiUser", label: "Username", autocomplete: "username" });
+  var fPass = T.Field($("#fPass"), { id: "apiPass", label: "Password", type: "password", autocomplete: "current-password" });
+  function openDrawer() {
+    lastFocus = document.activeElement; drawer.hidden = false; scrim.hidden = false;
+    M.animate(drawer, { x: ["100%", "0%"] }, M.SPRING.snappy);
+    M.animate(scrim, { opacity: [0, 1] }, { duration: 0.25 });
+    drawer.querySelectorAll(".drawer-form > *").forEach(function (el, i) { M.animate(el, { opacity: [0, 1], x: [28, 0] }, Object.assign({}, M.SPRING.soft, { delay: 0.12 + i * 0.06 })); });
+    setTimeout(function () { fUser.focus(); }, 80);
+  }
+  function closeDrawer() {
+    var a = M.animate(drawer, { x: ["0%", "100%"] }, { duration: 0.32, ease: M.EASE.inOut });
+    M.animate(scrim, { opacity: [1, 0] }, { duration: 0.25 });
+    var done = function () { drawer.hidden = true; scrim.hidden = true; if (lastFocus) lastFocus.focus(); };
+    if (a && a.then) a.then(done); else if (a && "onfinish" in a) a.onfinish = done; else done();
+  }
+  $("#accessBtn").addEventListener("click", openDrawer);
+  $("#closeDrawer").addEventListener("click", closeDrawer);
+  scrim.addEventListener("click", closeDrawer);
+  addEventListener("keydown", function (e) { if (e.key === "Escape" && !drawer.hidden) closeDrawer(); });
+  $("#accessForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msg = $("#accessMsg");
+    state.api = fUrl.value.trim().replace(/\/$/, ""); state.user = fUser.value; state.pass = fPass.value;
+    if (!state.api || !state.user || !state.pass) { msg.dataset.tone = "bad"; msg.textContent = "Fill in the address, username and password."; return; }
+    msg.dataset.tone = ""; msg.textContent = "Checking " + state.api + " …"; status.set("busy", "Connecting");
+    T.api.health(state.api, state.user, state.pass).then(function (j) {
+      state.connected = true; msg.dataset.tone = "ok"; msg.textContent = "Connected. " + (j.message || "Health check passed.");
+      status.set("online", "API online"); strings.strings.forEach(function (_, i) { setTimeout(function () { strings.pluck(i, 0.5, 12); }, i * 70); });
+      syncHint(); setTimeout(closeDrawer, 700);
+    }).catch(function (err) {
+      state.connected = false; msg.dataset.tone = "bad";
+      msg.textContent = err instanceof TypeError ? "Could not reach " + state.api + ". Check the address and that the API is running. Pages hosted on claude.ai cannot call other servers; open the page locally instead." : "Connection failed: " + err.message;
+      status.set("offline", "API not connected"); syncHint();
+    });
+  });
+
+  // ---------- first frame: the README sample, labelled as such
+  render(T.SAMPLE, "README sample response · not a real analysis");
+  syncHint();
+})();
