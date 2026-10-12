@@ -97,6 +97,7 @@ main { max-width: 1280px; margin: 0 auto; }
   padding: calc(var(--space-6) + env(safe-area-inset-top, 0px)) var(--space-6) var(--space-6);
   background: var(--surface-raised); border-left: 1px solid var(--line); box-shadow: var(--shadow-lift);
 }
+.drawer > * { flex-shrink: 0; }
 .drawer-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-4); }
 .drawer p { margin: 0; }
 .drawer-form { display: grid; gap: var(--space-4); }
