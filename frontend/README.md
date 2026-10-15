@@ -46,17 +46,20 @@ The UI mirrors the backend that is already in this repository:
 6. max pooling across windows
 7. dynamic threshold filtering
 
-The animated processing sequence is presentation feedback around the real request; the backend response remains the source of truth.
+Upload progress is real (measured by the browser). Steps 2–7 all run inside one `/detect` request and the API reports no per-step progress, so the console shows them as running on the server together until the response arrives, then shows the total time taken.
 
 ## UI features
 
 - futuristic dark console layout
 - animated orbital system monitor
 - drag-and-drop audio intake
-- client-side waveform preview
-- animated inference pipeline
-- real detection result cards from `/detect`
+- client-side waveform preview with the 10-second window grid; click to seek
+- built-in audio player (play/pause, current time, current window number; Space toggles playback)
+- window count computed with the same rule as `classifier.py` (tails under 1 s are skipped)
+- inference pipeline with real upload progress and elapsed time
+- real detection result cards from `/detect`, each with a **Play window** button that plays that instrument's 10-second window
 - confidence/match score visualization
-- timestamp timeline
+- full-song timeline: a time ruler, one row per detected instrument and a playhead synced to playback; click a row to play its window, click the ruler to seek
+- detected windows highlighted on the waveform; the matching card and timeline row light up while their window is playing
 - responsive mobile layout
 - runtime FastAPI Basic Auth connection panel

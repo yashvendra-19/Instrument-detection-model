@@ -41,20 +41,31 @@
             <div class="drop-core"><div class="upload-glyph"><span></span></div><strong id="dropTitle">DROP AUDIO HERE</strong><span id="dropSub">or click to browse your machine</span></div><div class="drop-scan"></div><div class="drop-corner c1"></div><div class="drop-corner c2"></div><div class="drop-corner c3"></div><div class="drop-corner c4"></div>
           </label>
           <div class="selected-file hidden" id="selectedFile"><div class="file-icon">♫</div><div class="file-copy"><strong id="fileName">audio.mp3</strong><span id="fileMeta">0 MB · audio</span></div><button class="mini-btn" id="clearFileBtn" type="button">CLEAR</button></div>
-          <div class="wave-shell hidden" id="waveShell"><div class="wave-head"><span>LIVE SIGNAL PREVIEW</span><span id="durationLabel">00:00</span></div><canvas id="waveform"></canvas><div class="wave-marker" id="waveMarker"></div><div class="playhead-glow"></div></div>
+          <div class="wave-shell hidden" id="waveShell">
+            <div class="wave-head"><span>SIGNAL PREVIEW · CLICK TO SEEK</span><span id="windowCountLabel">— WINDOWS</span></div>
+            <div class="wave-stage" id="waveStage"><canvas id="waveform"></canvas><div class="wave-windows" id="waveWindows"></div><div class="wave-marker" id="waveMarker"></div></div>
+            <div class="player-row">
+              <button class="play-btn" id="playBtn" type="button" aria-label="Play"><span class="play-icon"></span></button>
+              <span class="time-readout"><b id="currentTimeLabel">00:00</b> / <span id="durationLabel">00:00</span></span>
+              <span class="now-window" id="nowWindow">WINDOW —</span>
+            </div>
+            <audio id="audioEl" preload="metadata"></audio>
+            <div class="playhead-glow"></div>
+          </div>
           <div class="action-row"><button class="primary-btn magnetic" id="analyzeBtn" type="button" disabled><span class="btn-glow"></span><span id="analyzeLabel">ANALYZE AUDIO</span><span class="btn-arrow">→</span></button><button class="secondary-btn magnetic" id="resetBtn" type="button">RESET CONSOLE</button></div>
         </article>
 
         <article class="panel process-panel hidden magnetic-card" id="processPanel">
           <div class="panel-head"><div><span class="panel-kicker">02 / PIPELINE</span><h2>Inference sequence</h2></div><span class="processing-badge" id="processingBadge">PROCESSING</span></div>
           <div class="process-list">
-            <div class="process-step" data-step="0"><span class="step-index">01</span><div><strong>Upload received</strong><small>FastAPI request payload accepted</small></div><span class="step-state">WAITING</span></div>
+            <div class="process-step" data-step="0"><span class="step-index">01</span><div><strong>Uploading audio</strong><small>Sending the file to FastAPI /detect</small></div><span class="step-state">WAITING</span></div>
             <div class="process-step" data-step="1"><span class="step-index">02</span><div><strong>Segmenting audio</strong><small>48 kHz mono · 10-second windows</small></div><span class="step-state">WAITING</span></div>
             <div class="process-step" data-step="2"><span class="step-index">03</span><div><strong>Embedding audio</strong><small>CLAP audio feature extraction</small></div><span class="step-state">WAITING</span></div>
             <div class="process-step" data-step="3"><span class="step-index">04</span><div><strong>Matching prompts</strong><small>Audio ↔ instrument text similarity</small></div><span class="step-state">WAITING</span></div>
             <div class="process-step" data-step="4"><span class="step-index">05</span><div><strong>Dynamic threshold</strong><small>Filtering weaker instrument matches</small></div><span class="step-state">WAITING</span></div>
           </div>
           <div class="progress-track"><div class="progress-value" id="pipelineProgress"></div></div>
+          <p class="pipeline-note">Steps 02–05 run inside a single server request. The API does not report per-step progress, so they are shown as running together until the response arrives.</p>
         </article>
 
         <article class="panel results-panel magnetic-card" id="results">
@@ -69,8 +80,9 @@
         </article>
 
         <article class="panel timeline-panel hidden magnetic-card" id="timelinePanel">
-          <div class="panel-head"><div><span class="panel-kicker">04 / TEMPORAL MAP</span><h2>Instrument timeline</h2></div><span class="panel-code">MAX-POOLED PEAKS</span></div>
+          <div class="panel-head"><div><span class="panel-kicker">04 / FULL-SONG MAP</span><h2>Instrument timeline</h2></div><span class="panel-code">STRONGEST 10-S WINDOW PER INSTRUMENT</span></div>
           <div class="timeline" id="timeline"></div>
+          <p class="timeline-hint">Click a row or bar to play that instrument's window. Click the ruler to seek anywhere in the song.</p>
         </article>
       </div>
 
