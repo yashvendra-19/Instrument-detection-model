@@ -1,29 +1,31 @@
 # PipeGen Stage 1 — Requirement (draft input)
 
-> This is the requirement text to give PipeGen at Stage 1. It is a **draft**:
-> it becomes evidence only once PipeGen has consumed it. Save PipeGen's own copy
-> or screenshot to `reports/evidence/pipegen/`.
+> This is the text to give PipeGen v0.5.1 at Stage 1. It is a **draft**, and it
+> becomes evidence only once PipeGen has consumed it. Save a screenshot to
+> `reports/evidence/pipegen/01_requirement.png`.
 
-## Requirement (paste into PipeGen)
+## Short version (one sentence)
+
+Detect and track people from a USB camera, mark a restricted zone on the
+right-hand side of the frame, compile the detector to TensorRT FP16, show live
+boxes with track IDs, and publish per-frame detection metadata as JSON and MQTT.
+
+## Full version
 
 Build a real-time workplace-safety perception pipeline called
-"Workplace Safety Sentinel" for an NVIDIA GPU / Jetson running DeepStream.
+"Workplace Safety Sentinel".
 
-- Input: one live video source — a USB camera (V4L2), an RTSP stream, or a video
-  file (H.264 / MP4). The source must be configurable.
-- Perception: detect **people** in every frame with a pretrained object detector
-  that includes a person class (e.g. a PeopleNet / TrafficCamNet / YOLO-family
-  COCO model supported by PipeGen). Confidence threshold about 0.4.
-- Tracking: assign a persistent tracking ID to each person (DeepStream nvtracker,
-  e.g. NvDCF or IOU) so one person entering a zone is counted once.
-- Optimization: compile the detector to a **TensorRT engine** (FP16 if supported,
-  otherwise FP32) and produce the PipeGen speed report.
-- Visualization: on-screen display of bounding boxes, labels, track IDs, and a
-  rectangular restricted zone at normalized coordinates
-  x 0.60–0.95, y 0.20–0.90 (pixel ROI at 1920x1080: 1152,216 → 1824,972).
-- Output (actionable, beyond boxes): emit per-frame object metadata as JSON —
-  for each object: label/class ID, confidence, tracking ID, bounding box
-  (left, top, width, height) plus frame number, timestamp and frame size —
-  to a JSON-lines file and/or an MQTT topic. A downstream incident processor
-  turns this into `restricted_zone_intrusion` events on `workplace_safety/alerts`.
-- Target: ≥ 25 FPS at 1080p on the target GPU.
+- Input: the USB camera (V4L2), or for rehearsal a video file stored under /home.
+- Task: detect **people** with a pretrained detector that has a person class,
+  confidence about 0.4, and **track** each person with a persistent ID.
+- Optimization: compile the ONNX detector to a **TensorRT engine** (FP16, with
+  INT8 as a stretch goal) and produce the speed report.
+- Display: live display with bounding boxes, labels and track IDs. The restricted
+  zone is the rectangle at normalized x 0.60–0.95, y 0.20–0.90 (at 1920x1080 that
+  is pixels 1152,216 to 1824,972).
+- Outputs (actionable): a **JSON metadata file** with one record per frame (frame
+  number, timestamp, frame size, and for each object its label/class ID,
+  confidence, track ID and bounding box) and the same metadata over **MQTT**.
+  A downstream incident processor turns this into `restricted_zone_intrusion`
+  alerts on `workplace_safety/alerts`.
+- Target: real-time (≥ 25 FPS) on the target GPU.

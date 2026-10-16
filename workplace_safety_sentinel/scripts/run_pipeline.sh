@@ -5,15 +5,20 @@
 # run command documented/printed by YOUR installed PipeGen version.
 #
 # Required environment:
-#   PIPEGEN_RUN_CMD  the command that launches the generated pipeline
-#                    (e.g. the deepstream-app / generated launcher PipeGen gives you)
+#   PIPEGEN_RUN_CMD  the command that launches the generated pipeline. If unset,
+#                    the run.sh that PipeGen generates inside pipegen_project/export/
+#                    is used (PipeGen "generates a DeepStream app with a run.sh").
 #   METADATA_PATH    the JSONL file the pipeline writes per-frame detections to
 # Optional:
 #   METADATA_FORMAT  generic | deepstream_minimal   (default: settings.yaml)
 #   SENTINEL_MQTT=1  also publish alerts to MQTT
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-: "${PIPEGEN_RUN_CMD:?set PIPEGEN_RUN_CMD to the run command from your PipeGen project}"
+if [[ -z "${PIPEGEN_RUN_CMD:-}" ]]; then
+  RUN_SH="$(find "$ROOT/pipegen_project/export" -name run.sh 2>/dev/null | head -1)"
+  [[ -n "$RUN_SH" ]] && PIPEGEN_RUN_CMD="cd '$(dirname "$RUN_SH")' && ./run.sh"
+fi
+: "${PIPEGEN_RUN_CMD:?no run.sh under pipegen_project/export/ - export the PipeGen project there or set PIPEGEN_RUN_CMD}"
 : "${METADATA_PATH:?set METADATA_PATH to the detection-metadata file the pipeline writes}"
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 EVID="$ROOT/reports/evidence/pipeline_runs"; mkdir -p "$EVID"

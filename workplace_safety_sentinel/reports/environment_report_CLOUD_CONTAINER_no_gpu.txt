@@ -1,4 +1,4 @@
-# Environment report - 2026-10-16T15:52:04Z - host vm
+# Environment report - 2026-10-16T15:56:08Z - host vm
 ## OS / CPU
 $ uname -a
 Linux vm 6.18.44-fc-v139 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
@@ -118,14 +118,22 @@ $ which mosquitto mosquitto_sub mosquitto_pub
 [exit 0]
 
 ## Disk / memory
-$ df -h "/root/workplace_safety_sentinel"
+$ df -h "/home/user/Instrument-detection-model/workplace_safety_sentinel"
 Filesystem      Size  Used Avail Use% Mounted on
 /dev/vda        252G   11G   29G  27% /
 [exit 0]
 
 $ free -h
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       823Mi        12Gi        14Mi       2.2Gi        14Gi
+Mem:            15Gi       835Mi        12Gi        14Mi       2.2Gi        14Gi
 Swap:             0B          0B          0B
 [exit 0]
 
+## Official Track A setup checklist (problem statement)
+  [FAIL] no NVIDIA GPU / JetPack 6 Jetson detected
+  [PASS] arch x86_64
+  [FAIL] pipegen --version should print 0.5.1 (got: not installed)
+  [FAIL] XDG_SESSION_TYPE=<unset> (PipeGen needs an X11 desktop session)
+  [FAIL] no /dev/video* (USB camera not connected)
+  [FAIL] deepstream-app not found
+  [PASS] project under /home

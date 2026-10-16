@@ -1,40 +1,58 @@
 # Submission checklist
 
-Status values: **Complete**, **Incomplete**, **Blocked**, **Not verified**.
-This checklist was last updated in the cloud container (no GPU) on 2026-10-16.
-Re-run `scripts/validate_project.sh` on the GPU machine and update this file.
+Source of the requirements: *Embedded SF: CraftifAI Physical AI Hackathon:
+Official Problem Statement*, Track A.
 
-## Mandatory (official Track A requirements)
+- **Deadline:** 4:00 pm
+- **Submission form (PipeGen):** https://forms.gle/eJyeCKCG2UH757QZ8
+
+Status values: **Complete**, **Incomplete**, **Blocked**, **Not verified**.
+Last updated in the cloud container (no GPU) on 2026-10-16. Re-run
+`scripts/validate_project.sh` on the GPU machine and update this file.
+
+## Setup checklist (official)
+
+| Item | Status | Note |
+| --- | --- | --- |
+| PipeGen v0.5.1 installed, `pipegen --version` prints `0.5.1` | Not verified | Not installed in the container |
+| Signed in with a CraftifAI account | Not verified | Must be done by you |
+| x86-64 + NVIDIA GPU, or Jetson on JetPack 6 | Not verified | The container has no GPU (`reports/environment_report_CLOUD_CONTAINER_no_gpu.txt`) |
+| X11 desktop session | Not verified | `echo $XDG_SESSION_TYPE` should print `x11` |
+| USB camera from the kit | Not verified | No camera in the container |
+| Videos under `/home` | Not verified | — |
+
+## Mandatory requirements (Track A)
 
 | # | Requirement | Status | Evidence / note |
 | --- | --- | --- | --- |
-| A1 | PipeGen stage 1: Requirement | Incomplete | Draft at `pipegen_project/requirement.md`. Not yet fed to PipeGen. |
-| A2 | PipeGen stage 2: Pipeline IR | Blocked (here) | PipeGen not installed. CraftifAI portal unreachable from the container. |
-| A3 | PipeGen stage 3: Model | Blocked (here) | Requires PipeGen. |
-| A4 | PipeGen stage 4: Compiler | Blocked (here) | Requires PipeGen, TensorRT, and a GPU. |
-| A5 | PipeGen stage 5: Run | Blocked (here) | Requires a GPU and DeepStream. |
-| B1 | At least one model compiled to a TensorRT engine | Not verified | No `*.engine` exists. No GPU in the container. |
-| B2 | PipeGen speed report preserved | Not verified | Save it to `reports/evidence/pipegen/04_speed_report.*` |
-| C1 | Live input (USB, CSI, RTSP or file) | Not verified | No camera or video in the container. |
-| C2 | Runs on an NVIDIA GPU or Jetson | Not verified | `reports/environment_report_CLOUD_CONTAINER_no_gpu.txt` shows no GPU here. |
-| D1 | Actionable output: JSON incidents | Complete (component) / Not verified (live) | `reports/evidence/synthetic_component_test/incidents_synthetic.jsonl` (synthetic input), plus unit tests |
-| D2 | Actionable output: MQTT (optional) | Complete (component) / Not verified (live) | `reports/evidence/synthetic_component_test/mqtt_subscriber_received.txt`, tested with local Mosquitto 2.x |
-| E1 | PipeGen central to the implementation | Not verified | The design puts all perception in PipeGen. Needs the actual run. |
+| 1 | Full PipeGen flow: Requirement | Incomplete | Draft at `pipegen_project/requirement.md` |
+| 1 | Full PipeGen flow: Pipeline IR | Blocked (here) | Needs PipeGen. Screenshot to `reports/evidence/pipegen/02_pipeline_ir_graph.png` |
+| 1 | Full PipeGen flow: Model | Blocked (here) | Needs PipeGen |
+| 1 | Full PipeGen flow: Compiler | Blocked (here) | Needs PipeGen and a GPU |
+| 1 | Full PipeGen flow: Run | Blocked (here) | Needs a GPU and the generated `run.sh` |
+| 2 | TensorRT engine and PipeGen speed report | Not verified | Screenshot to `reports/evidence/pipegen/04_speed_report.png` |
+| 3 | Live run (video file, USB, CSI or RTSP) on a GPU or Jetson | Not verified | `scripts/run_pipeline.sh` puts logs in `reports/evidence/pipeline_runs/` |
+| 4 | Actionable output (JSON or MQTT feed, alerts) | Complete (component) / Not verified (live) | Synthetic-input test: `reports/evidence/synthetic_component_test/` (JSONL and MQTT received from a local Mosquitto broker). 36 unit tests. |
+| — | Deep integration: PipeGen is load-bearing | Not verified | By design, all perception and the metadata feed come from PipeGen, and the Python side does no inference. This needs the real run. |
 
-## Project deliverables
+## What to submit
 
 | Item | Status | Path |
 | --- | --- | --- |
-| Source code | Complete | `src/`, `scripts/`, `config/` |
-| Unit tests (36) | Complete: all pass | `tests/` (run `python3 -m pytest -q`) |
-| README | Complete | `README.md` |
-| Architecture / project description | Complete | `docs/architecture.md`, `README.md` |
-| Demo script | Complete | `docs/demo_script.md` |
-| PipeGen runbook | Complete | `pipegen_project/README.md` |
-| PipeGen export directory | Incomplete | `pipegen_project/export/` (to be created by PipeGen) |
-| Pipeline IR graph evidence | Not verified | `reports/evidence/pipegen/` |
-| Live incident log | Not verified | `data/incidents.jsonl` (written only by real runs) |
-| Screenshots | Not verified | Take them on the GPU machine. Never fabricate them. |
+| Working prototype: live demo at the venue | Not verified | `docs/demo_script.md` |
+| Repository link, **including the PipeGen export folder** | Incomplete | `pipegen_project/export/` does not exist yet |
+| Project description (inputs, tasks, models, precision, outputs, bonus) | Incomplete | `docs/project_description.md` (fill in the `TBD`s) |
+| Evidence: IR node graph screenshot | Not verified | `reports/evidence/pipegen/02_pipeline_ir_graph.png` |
+| Evidence: TensorRT speed report screenshot | Not verified | `reports/evidence/pipegen/04_speed_report.png` |
+| Pitch deck or video (optional) | — | — |
+
+## Supporting deliverables already complete
+- Source: `src/`, `scripts/`, `config/`
+- Tests: `tests/`, 36 passing
+- Docs: `README.md`, `docs/architecture.md`, `docs/demo_script.md`, and the runbook
+  at `pipegen_project/README.md`
 
 ## Unmet mandatory requirements right now
-A1–A5, B1, B2, C1, C2, E1. All of them need the NVIDIA machine with CraftifAI PipeGen.
+All five PipeGen stages, the TensorRT engine and speed report, the live run on a
+GPU, the PipeGen export folder, and both evidence screenshots. Every one of them
+needs the NVIDIA machine running PipeGen v0.5.1.

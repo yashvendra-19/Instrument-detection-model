@@ -2,7 +2,8 @@
 
 **"See the danger. Detect the violation. Trigger the alert."**
 
-Embedded SF: CraftifAI Physical AI Hackathon, **Track A: PipeGen (Perception)**
+Embedded SF: CraftifAI Physical AI Hackathon, **Track A: PipeGen (Perception)**.
+This is suggested problem track #1 in the official problem statement.
 
 An edge-AI safety monitor. It detects people in a live video stream and recognizes
 when someone enters a restricted zone, such as a machine cell, a robot work area,
@@ -52,8 +53,11 @@ turns the pipeline's metadata into actionable incidents. For details, see
 
 ## Requirements
 
-- On the GPU machine: NVIDIA GPU or Jetson, driver, DeepStream, TensorRT, and
-  CraftifAI PipeGen with an authenticated developer account.
+- On the GPU machine, per the official setup checklist: **PipeGen v0.5.1**
+  (`pipegen --version` prints `0.5.1`), signed in with a CraftifAI account, on
+  x86-64 Linux with an NVIDIA GPU or a Jetson on JetPack 6, in an **X11** session.
+  Use the kit's USB camera, and keep videos under `/home`. Download PipeGen from
+  https://developer.craftifai.com/dashboard?tab=downloads
 - For the incident processor: Python ≥ 3.9, `PyYAML`; optionally `paho-mqtt` and a
   broker such as Mosquitto; `pytest` for the tests.
 
@@ -91,15 +95,17 @@ min ≥ max) stop the processor with a clear error.
 
 Follow `pipegen_project/README.md` for stages 1–5. Then:
 
+PipeGen generates a DeepStream app with a `run.sh`. Export the project to
+`pipegen_project/export/`, then run:
+
 ```bash
-export PIPEGEN_RUN_CMD="<run command from your PipeGen project>"
-export METADATA_PATH="<JSONL detections file written by the pipeline>"
-export METADATA_FORMAT=generic      # or deepstream_minimal
-SENTINEL_MQTT=1 scripts/run_pipeline.sh
+export METADATA_PATH="<JSON metadata file written by the generated app>"
+export METADATA_FORMAT=generic      # or deepstream_minimal, after checking `head -3`
+SENTINEL_MQTT=1 scripts/run_pipeline.sh   # auto-finds export/**/run.sh (or set PIPEGEN_RUN_CMD)
 ```
 
-`run_pipeline.sh` starts the incident processor in follow mode, launches your
-pipeline, and saves both logs to `reports/evidence/pipeline_runs/`.
+`run_pipeline.sh` starts the incident processor in follow mode, launches the
+generated app, and saves both logs to `reports/evidence/pipeline_runs/`.
 
 ## Running the incident processor directly
 
@@ -195,7 +201,10 @@ The fields mean:
 - `config/settings.yaml`
 - `tests/`
 - `scripts/`
-- `pipegen_project/`: PipeGen requirement and runbook; the export goes here
+- `pipegen_project/`: PipeGen requirement and runbook. **The PipeGen export folder
+  goes in `pipegen_project/export/`**; the official rules require it in the repo.
+- `docs/project_description.md`: the text for the submission form
+  (https://forms.gle/eJyeCKCG2UH757QZ8, deadline 4:00 pm)
 - `reports/`: environment reports and evidence
 - `docs/`: architecture, demo script, submission checklist
 
