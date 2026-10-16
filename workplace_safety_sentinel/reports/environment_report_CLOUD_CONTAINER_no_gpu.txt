@@ -1,0 +1,131 @@
+# Environment report - 2026-10-16T15:52:04Z - host vm
+## OS / CPU
+$ uname -a
+Linux vm 6.18.44-fc-v139 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+[exit 0]
+
+$ uname -m
+x86_64
+[exit 0]
+
+$ cat /etc/os-release | head -4
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.5 LTS (Noble Numbat)"
+[exit 0]
+
+$ cat /etc/nv_tegra_release
+cat: /etc/nv_tegra_release: No such file or directory
+[exit 1]
+
+## Display
+XDG_SESSION_TYPE=<unset> DISPLAY=<unset>
+
+## NVIDIA GPU / driver
+$ nvidia-smi
+bash: line 1: nvidia-smi: command not found
+[exit 127]
+
+$ ls /dev/nvidia* 2>/dev/null
+[exit 2]
+
+## CUDA
+$ nvcc --version
+bash: line 1: nvcc: command not found
+[exit 127]
+
+$ ls -d /usr/local/cuda*
+ls: cannot access '/usr/local/cuda*': No such file or directory
+[exit 2]
+
+## TensorRT
+$ which trtexec || ls /usr/src/tensorrt/bin/trtexec
+ls: cannot access '/usr/src/tensorrt/bin/trtexec': No such file or directory
+[exit 2]
+
+$ dpkg -l | grep -iE 'tensorrt|nvinfer' | head
+[exit 0]
+
+$ python3 -c 'import tensorrt; print(tensorrt.__version__)'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import tensorrt; print(tensorrt.__version__)
+    ^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'tensorrt'
+[exit 1]
+
+## DeepStream
+$ deepstream-app --version-all
+bash: line 1: deepstream-app: command not found
+[exit 127]
+
+$ ls /opt/nvidia/deepstream/
+ls: cannot access '/opt/nvidia/deepstream/': No such file or directory
+[exit 2]
+
+$ ls /opt/nvidia/deepstream/deepstream/samples/streams/
+ls: cannot access '/opt/nvidia/deepstream/deepstream/samples/streams/': No such file or directory
+[exit 2]
+
+$ gst-inspect-1.0 nvinfer | head -5
+bash: line 1: gst-inspect-1.0: command not found
+[exit 0]
+
+$ gst-inspect-1.0 nvtracker | head -5
+bash: line 1: gst-inspect-1.0: command not found
+[exit 0]
+
+## PipeGen
+$ which pipegen
+[exit 1]
+
+$ pipegen --version
+bash: line 1: pipegen: command not found
+[exit 127]
+
+$ pipegen --help
+bash: line 1: pipegen: command not found
+[exit 127]
+
+$ pip list 2>/dev/null | grep -iE 'pipegen|craftif'
+[exit 1]
+
+## Camera
+$ ls -l /dev/video*
+ls: cannot access '/dev/video*': No such file or directory
+[exit 2]
+
+$ v4l2-ctl --list-devices
+bash: line 1: v4l2-ctl: command not found
+[exit 127]
+
+## Python
+$ which python3; python3 --version
+/usr/bin/python3
+Python 3.13.16
+[exit 0]
+
+$ python3 -c 'import yaml, paho.mqtt; print("yaml ok, paho", paho.mqtt.__version__)'
+yaml ok, paho 2.1.0
+[exit 0]
+
+## MQTT broker
+$ which mosquitto mosquitto_sub mosquitto_pub
+/usr/sbin/mosquitto
+/usr/bin/mosquitto_sub
+/usr/bin/mosquitto_pub
+[exit 0]
+
+## Disk / memory
+$ df -h "/root/workplace_safety_sentinel"
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda        252G   11G   29G  27% /
+[exit 0]
+
+$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       823Mi        12Gi        14Mi       2.2Gi        14Gi
+Swap:             0B          0B          0B
+[exit 0]
+

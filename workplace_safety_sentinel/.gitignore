@@ -1,0 +1,10 @@
+# Large / machine-specific artifacts: keep the files, do not commit them
+*.engine
+*.onnx
+*.etlt
+*.plan
+*.mp4
+*.h264
+*.mkv
+*.avi
+data/stats.json.tmp

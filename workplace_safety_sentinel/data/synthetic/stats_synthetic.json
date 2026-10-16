@@ -1,0 +1,12 @@
+{
+  "frames_processed": 80,
+  "total_detections": 160,
+  "current_people": 2,
+  "unique_tracked_people": 2,
+  "incidents_total": 1,
+  "incidents_by_zone": {
+    "restricted_zone_1": 1
+  },
+  "last_incident_timestamp": "2026-01-01T00:00:05.100000+00:00",
+  "malformed_records": 0
+}

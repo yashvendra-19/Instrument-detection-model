@@ -1,0 +1,5 @@
+# Incident-processing side only. Perception (PipeGen / DeepStream / TensorRT)
+# is provided by the CraftifAI + NVIDIA stack on the GPU machine.
+PyYAML>=6.0
+paho-mqtt>=1.6      # optional: MQTT alerts
+pytest>=7.0         # tests

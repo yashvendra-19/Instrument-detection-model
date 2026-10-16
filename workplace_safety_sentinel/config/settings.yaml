@@ -1,0 +1,54 @@
+# Workplace Safety Sentinel - project settings
+# All zone coordinates are NORMALIZED (0.0 - 1.0) relative to frame width/height,
+# so the same zone works at any input resolution.
+
+zones:
+  - id: restricted_zone_1
+    name: "Machine cell A"
+    x_min: 0.60
+    y_min: 0.20
+    x_max: 0.95
+    y_max: 0.90
+
+detection:
+  # Which detections count as a "person". Fill these from the label file of the
+  # model actually selected in PipeGen - do NOT assume class 0 without checking.
+  # A detection matches if its label is in person_labels (case-insensitive)
+  # OR its class_id is in person_class_ids.
+  person_labels: ["person"]
+  person_class_ids: []
+  min_confidence: 0.40
+  # Detections without a confidence value (e.g. DeepStream minimal schema) are
+  # accepted when this is true.
+  accept_missing_confidence: true
+  # Point of the bounding box used as the person's ground-contact position.
+  # One of: bottom_center, center
+  anchor: bottom_center
+
+incidents:
+  output_path: data/incidents.jsonl
+  stats_path: data/stats.json
+  # Tracked objects: an incident fires once when a track enters a zone and has
+  # stayed inside for confirm_frames consecutive frames.
+  confirm_frames: 3
+  # Minimum time between two incidents for the same track+zone (re-entry flicker
+  # guard) and, when no tracking IDs exist, between two incidents for the same zone.
+  cooldown_seconds: 10.0
+  # Forget a track's state after it has not been seen for this long.
+  track_timeout_seconds: 5.0
+
+input:
+  # generic             - one JSON object per frame (see README "Metadata contract")
+  # deepstream_minimal  - DeepStream nvmsgconv minimal schema (payload-type 1)
+  format: generic
+  # Needed only when the metadata does not carry frame size (deepstream_minimal).
+  frame_width: 1920
+  frame_height: 1080
+
+mqtt:
+  enabled: false
+  host: localhost
+  port: 1883
+  topic: workplace_safety/alerts
+  qos: 1
+  client_id: workplace-safety-sentinel
