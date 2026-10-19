@@ -1,6 +1,5 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import Button from "../components/Button.jsx";
 import GlassCard from "../components/GlassCard.jsx";
 import TracingBeam from "../components/TracingBeam.jsx";
 import { Kicker, Reveal } from "../components/TextEffects.jsx";
@@ -10,15 +9,6 @@ const LAYERS = [
   { title: "Browser console", sub: "React · Web Audio · Three.js", items: ["Upload & waveform", "Player & timeline", "Demo mode"], color: "var(--cyan)" },
   { title: "FastAPI service", sub: "app.py · HTTP Basic auth", items: ["GET /  health", "POST /detect", "Temp-file handling"], color: "var(--violet)" },
   { title: "Classifier engine", sub: "classifier.py · laion_clap", items: ["10-s windowing", "CLAP audio + text encoders", "Max-pool + threshold"], color: "var(--magenta)" },
-];
-
-const LIMITS = [
-  ["Similarities, not probabilities", "A score of 0.31 is a cosine similarity; the % ranks instruments within one song."],
-  ["One window per instrument", "Only the strongest 10-second window is reported."],
-  ["Relative threshold", "1.15 × the mean always lets some instruments through, even in a song with none of them."],
-  ["Prompt sensitivity", "Wording matters, and some prompts overlap — tanpura drone vs harmonium."],
-  ["No vocal class", "Vocals are not among the 32 prompts."],
-  ["Not yet benchmarked", "Accuracy and latency still need a labelled Indian-music test set."],
 ];
 
 function Architecture() {
@@ -94,16 +84,6 @@ export default function HowItWorks() {
         <Reveal className="section__head"><Kicker>Architecture</Kicker><h2 className="section__title">Three layers, one request</h2>
           <p className="section__lede">Scroll to separate the layers. The console talks only to the API; the API owns the model.</p></Reveal>
         <Architecture />
-      </section>
-
-      <section className="section">
-        <Reveal className="section__head"><Kicker>Honest limits</Kicker><h2 className="section__title">What it does not do yet</h2></Reveal>
-        <div className="limits">
-          {LIMITS.map(([t, d], i) => (
-            <Reveal key={t} delay={i * 0.05}><GlassCard className="limit"><strong>{t}</strong><p className="muted small">{d}</p></GlassCard></Reveal>
-          ))}
-        </div>
-        <div className="center"><Button variant="primary" to="/analyze">Try it in the studio</Button></div>
       </section>
     </div>
   );
