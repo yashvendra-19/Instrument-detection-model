@@ -1,62 +1,45 @@
-# Instrument Intelligence Console
+# Instrument Intelligence Console (v2)
 
-Static frontend for the existing FastAPI + CLAP instrument detection service.
+Multi-page front end for the FastAPI + CLAP instrument detector in this repository.
+React 18 + Vite, Three.js (React Three Fiber) for the 3D sound sphere, Framer Motion for motion,
+glass-morphism design system documented in [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+Fonts: Dancing Script (headings), Sora (body) and JetBrains Mono (data) from [google/fonts](https://github.com/google/fonts), self-hosted via `@fontsource`.
 
-## Stack
+## Pages
 
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Motion's vanilla JavaScript API from the Motion ecosystem (used instead of React-only Framer Motion)
-- Web Audio API for the local waveform preview
-
-Framer Motion is designed around React. Because this project intentionally avoids React/Vite, this implementation uses the framework-agnostic Motion browser API so the code remains HTML + CSS + JS while retaining the same animation ecosystem.
+| Route | Page |
+|---|---|
+| `#/` | Home — 3D sound-sphere hero, instrument marquee, feature bento, pipeline teaser |
+| `#/analyze` | Studio — upload or demo song, waveform + player, live audio-reactive sphere, pipeline, results, full-song timeline, JSON export |
+| `#/instruments` | Library — all 32 prompts from `classifier.py`, filter by family, search |
+| `#/how-it-works` | Scroll-traced pipeline, scoring formulas, 3D layered architecture, limitations |
+| `#/about` | Team, supervisor, stack |
 
 ## Run
 
-From the repository root:
+Requires Node.js 18+.
 
 ```bash
-python -m http.server 5500 --directory frontend
+cd frontend
+npm install
+npm run dev          # http://localhost:5173
 ```
 
-Open `http://127.0.0.1:5500`.
-
-Run the FastAPI backend separately:
+Production build (static files in `frontend/dist`, works from any folder thanks to hash routing):
 
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+npm run build
+npm run preview
 ```
 
-## Connect
+## Connect to the backend
 
-Click **API ACCESS**, enter the URL and the Basic Auth credentials for your running FastAPI service, then test the connection.
+Start the API from the repository root (`uvicorn app:app --port 8000`), then click **Connect** and enter
+the URL and Basic Auth credentials. Credentials are kept in the browser tab only.
 
-The credentials are intentionally entered at runtime and are not hard-coded into the frontend.
+## Demo mode
 
-## What the frontend visualizes
-
-The UI mirrors the backend that is already in this repository:
-
-1. upload accepted by FastAPI
-2. 48 kHz mono audio loading
-3. 10-second sliding windows
-4. CLAP audio embeddings
-5. CLAP text prompt matching
-6. max pooling across windows
-7. dynamic threshold filtering
-
-The animated processing sequence is presentation feedback around the real request; the backend response remains the source of truth.
-
-## UI features
-
-- futuristic dark console layout
-- animated orbital system monitor
-- drag-and-drop audio intake
-- client-side waveform preview
-- animated inference pipeline
-- real detection result cards from `/detect`
-- confidence/match score visualization
-- timestamp timeline
-- responsive mobile layout
-- runtime FastAPI Basic Auth connection panel
+No backend running? Use **Demo mode** (navbar dialog, Studio header, or *Try the demo* on Home).
+A 65-second demo song is synthesised in the browser and analysis returns a fixed sample result in the
+`/detect` JSON format. A banner and *Sample · demo* tags mark everything produced in this mode — it is
+not CLAP output.
