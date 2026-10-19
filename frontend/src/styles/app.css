@@ -360,8 +360,6 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan); }
 .arch__legend { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
 .arch__legend li { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: var(--glass-1); font-size: var(--fs-sm); }
 .arch__legend b { color: var(--accent); margin-right: var(--sp-2); }
-.limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-6); }
-.limit { padding: var(--sp-5); display: grid; gap: var(--sp-2); height: 100%; }
 
 /* ---------- team ---------- */
 .team { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-4); perspective: 1200px; }
@@ -409,7 +407,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan); }
   .hero__stats { grid-template-columns: repeat(2, auto); gap: var(--sp-4) var(--sp-6); }
   .bento { grid-template-columns: 1fr; }
   .bento > * { grid-column: auto !important; grid-row: auto !important; }
-  .math-grid, .limits, .about-grid, .form__row, .studio__side { grid-template-columns: 1fr; }
+  .math-grid, .about-grid, .form__row, .studio__side { grid-template-columns: 1fr; }
   .team { grid-template-columns: repeat(2, 1fr); }
   .timeline { --label-w: 96px; }
   .player__window { display: none; }

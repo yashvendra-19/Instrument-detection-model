@@ -79,8 +79,8 @@ border-radius: var(--r-lg);
 | `#/` | Home | 3D hero, instrument marquee, feature bento, pipeline teaser |
 | `#/analyze` | Studio | Upload / demo song, waveform + player, pipeline, results, full-song timeline, JSON export |
 | `#/instruments` | Library | All 32 prompts by category, filter and search |
-| `#/how-it-works` | Pipeline | Scroll-traced method, scoring formulas, 3D layered architecture, limitations |
-| `#/about` | Team | Team, supervisor, stack, repository |
+| `#/how-it-works` | Pipeline | Scroll-traced method, scoring formulas, 3D layered architecture |
+| `#/about` | Team | Team, stack, repository |
 
 Shared state (API connection, demo mode, current song, results, audio element) lives in
 `context/AppState.jsx`, so playback and results survive navigation between pages.

@@ -12,8 +12,8 @@ Fonts: Dancing Script (headings), Sora (body) and JetBrains Mono (data) from [go
 | `#/` | Home — 3D sound-sphere hero, instrument marquee, feature bento, pipeline teaser |
 | `#/analyze` | Studio — upload or demo song, waveform + player, live audio-reactive sphere, pipeline, results, full-song timeline, JSON export |
 | `#/instruments` | Library — all 32 prompts from `classifier.py`, filter by family, search |
-| `#/how-it-works` | Scroll-traced pipeline, scoring formulas, 3D layered architecture, limitations |
-| `#/about` | Team, supervisor, stack |
+| `#/how-it-works` | Scroll-traced pipeline, scoring formulas, 3D layered architecture |
+| `#/about` | Team and stack |
 
 ## Run
 
