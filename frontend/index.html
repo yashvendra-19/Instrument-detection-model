@@ -13,7 +13,7 @@
 <header class="topbar">
   <a class="brand" href="#"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>INSTRUMENT</strong><em>INTELLIGENCE</em></span></a>
   <div class="system-strip"><span class="status-dot" id="statusDot"></span><span id="systemStatus">API DISCONNECTED</span><span class="divider"></span><span>CLAP / 48KHZ / 10S WINDOWS</span></div>
-  <button class="ghost-btn magnetic" id="openAccessBtn" type="button"><span>◈</span> API ACCESS</button>
+  <div class="top-actions"><button class="ghost-btn demo-btn magnetic" id="demoBtn" type="button"><span>▶</span> TRY DEMO</button><button class="ghost-btn magnetic" id="openAccessBtn" type="button"><span>◈</span> API ACCESS</button></div>
 </header>
 <main class="shell">
   <aside class="rail">
@@ -24,6 +24,7 @@
     <div class="rail-footer"><span class="pulse-line"></span>ONLINE MODE</div>
   </aside>
   <section class="workspace">
+    <div class="demo-banner hidden" id="demoBanner" role="status"><span class="demo-pill">DEMO MODE</span><span>The pipeline is simulated and results are a fixed sample — not real CLAP output.</span><button class="mini-btn" id="exitDemoBtn" type="button">EXIT DEMO</button></div>
     <section class="hero" id="analysis">
       <div class="eyebrow"><span class="eyebrow-line"></span>AUDIO / MULTIMODAL CLASSIFICATION</div>
       <div class="hero-row">
@@ -52,7 +53,7 @@
             <audio id="audioEl" preload="metadata"></audio>
             <div class="playhead-glow"></div>
           </div>
-          <div class="action-row"><button class="primary-btn magnetic" id="analyzeBtn" type="button" disabled><span class="btn-glow"></span><span id="analyzeLabel">ANALYZE AUDIO</span><span class="btn-arrow">→</span></button><button class="secondary-btn magnetic" id="resetBtn" type="button">RESET CONSOLE</button></div>
+          <div class="action-row"><button class="primary-btn magnetic" id="analyzeBtn" type="button" disabled><span class="btn-glow"></span><span id="analyzeLabel">ANALYZE AUDIO</span><span class="btn-arrow">→</span></button><button class="secondary-btn magnetic" id="demoSongBtn" type="button">LOAD DEMO SONG</button><button class="secondary-btn magnetic" id="resetBtn" type="button">RESET CONSOLE</button></div>
         </article>
 
         <article class="panel process-panel hidden magnetic-card" id="processPanel">
@@ -99,6 +100,7 @@
           <p class="access-copy">Enter the credentials used by your FastAPI service. They stay in browser memory and are not saved to GitHub.</p>
           <form id="accessForm"><label><span>API BASE URL</span><input id="apiUrl" type="url" value="http://127.0.0.1:8000" required></label><label><span>USERNAME</span><input id="apiUser" type="text" autocomplete="username" required></label><label><span>PASSWORD</span><input id="apiPass" type="password" autocomplete="current-password" required></label><button class="primary-btn compact magnetic" type="submit"><span>TEST CONNECTION</span><span class="btn-arrow">→</span></button></form>
           <div class="access-status" id="accessStatus"></div>
+          <div class="access-alt"><span>No backend running?</span><button class="mini-btn" id="accessDemoBtn" type="button">USE DEMO MODE</button></div>
         </article>
       </aside>
     </section>

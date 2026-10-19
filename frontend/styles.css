@@ -62,3 +62,15 @@
 @media(prefers-reduced-motion:reduce){.wave-stage .wave-marker{transition:none}}
 .progress-value.waiting{width:100%!important;background:linear-gradient(90deg,var(--cyan) 0 30%,rgba(60,125,255,.25) 30% 40%,var(--blue) 40% 60%,rgba(155,92,255,.25) 60% 70%,var(--purple) 70%);background-size:200% 100%;animation:waitStripe 1.6s linear infinite;opacity:.75}
 @keyframes waitStripe{to{background-position:-200% 0}}
+
+/* Demo mode */
+.top-actions{display:flex;gap:10px}
+.demo-btn{color:var(--yellow);border-color:rgba(255,230,0,.28)}
+.demo-btn:hover{color:#fff;border-color:rgba(255,230,0,.6)}
+.demo-banner{display:flex;align-items:center;gap:14px;width:min(1260px,100%);margin:0 auto 28px;padding:12px 16px;border:1px solid rgba(255,230,0,.3);border-radius:12px;background:rgba(255,230,0,.06);color:#d9d3a4;font-size:12px}
+.demo-banner span:nth-child(2){flex:1}
+.demo-pill{padding:5px 9px;border-radius:999px;background:var(--yellow);color:#14130a;font:800 9px "Space Grotesk";letter-spacing:.12em;white-space:nowrap}
+.demo-tag{color:var(--yellow);font-weight:700;letter-spacing:.06em}
+.access-alt{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 26px 24px;padding-top:16px;border-top:1px solid var(--line);color:#76839a;font-size:10px}
+.secondary-btn:disabled{opacity:.45;cursor:wait}
+@media(max-width:600px){.top-actions .ghost-btn span{display:none}.demo-banner{flex-wrap:wrap}}

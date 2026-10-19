@@ -34,6 +34,15 @@ Click **API ACCESS**, enter the URL and the Basic Auth credentials for your runn
 
 The credentials are intentionally entered at runtime and are not hard-coded into the frontend.
 
+## Demo mode
+
+No backend running? Click **TRY DEMO** (or **USE DEMO MODE** in the API panel).
+
+- A 65-second demo song is synthesised in the browser (drone, harmonium-like chords at 0:10–0:20, tabla-like strokes at 0:40–0:50, a bansuri-like melody at 0:50–1:00). **LOAD DEMO SONG** creates it again at any time; you can also drop in your own file.
+- **ANALYZE AUDIO** runs a simulated pipeline and returns a fixed sample result in the same JSON format as `/detect`.
+- A yellow banner, the status strip and a **SAMPLE · DEMO** tag on every result card mark everything as simulated. Demo results are not CLAP output.
+- **EXIT DEMO**, or connecting to a real API, turns demo mode off.
+
 ## What the frontend visualizes
 
 The UI mirrors the backend that is already in this repository:
