@@ -1,74 +1,45 @@
-# Instrument Intelligence Console
+# Instrument Intelligence Console (v2)
 
-Static frontend for the existing FastAPI + CLAP instrument detection service.
+Multi-page front end for the FastAPI + CLAP instrument detector in this repository.
+React 18 + Vite, Three.js (React Three Fiber) for the 3D sound sphere, Framer Motion for motion,
+glass-morphism design system documented in [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+Fonts: Dancing Script (headings), Sora (body) and JetBrains Mono (data) from [google/fonts](https://github.com/google/fonts), self-hosted via `@fontsource`.
 
-## Stack
+## Pages
 
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Motion's vanilla JavaScript API from the Motion ecosystem (used instead of React-only Framer Motion)
-- Web Audio API for the local waveform preview
-
-Framer Motion is designed around React. Because this project intentionally avoids React/Vite, this implementation uses the framework-agnostic Motion browser API so the code remains HTML + CSS + JS while retaining the same animation ecosystem.
+| Route | Page |
+|---|---|
+| `#/` | Home — 3D sound-sphere hero, instrument marquee, feature bento, pipeline teaser |
+| `#/analyze` | Studio — upload or demo song, waveform + player, live audio-reactive sphere, pipeline, results, full-song timeline, JSON export |
+| `#/instruments` | Library — all 32 prompts from `classifier.py`, filter by family, search |
+| `#/how-it-works` | Scroll-traced pipeline, scoring formulas, 3D layered architecture, limitations |
+| `#/about` | Team, supervisor, stack |
 
 ## Run
 
-From the repository root:
+Requires Node.js 18+.
 
 ```bash
-python -m http.server 5500 --directory frontend
+cd frontend
+npm install
+npm run dev          # http://localhost:5173
 ```
 
-Open `http://127.0.0.1:5500`.
-
-Run the FastAPI backend separately:
+Production build (static files in `frontend/dist`, works from any folder thanks to hash routing):
 
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+npm run build
+npm run preview
 ```
 
-## Connect
+## Connect to the backend
 
-Click **API ACCESS**, enter the URL and the Basic Auth credentials for your running FastAPI service, then test the connection.
-
-The credentials are intentionally entered at runtime and are not hard-coded into the frontend.
+Start the API from the repository root (`uvicorn app:app --port 8000`), then click **Connect** and enter
+the URL and Basic Auth credentials. Credentials are kept in the browser tab only.
 
 ## Demo mode
 
-No backend running? Click **TRY DEMO** (or **USE DEMO MODE** in the API panel).
-
-- A 65-second demo song is synthesised in the browser (drone, harmonium-like chords at 0:10–0:20, tabla-like strokes at 0:40–0:50, a bansuri-like melody at 0:50–1:00). **LOAD DEMO SONG** creates it again at any time; you can also drop in your own file.
-- **ANALYZE AUDIO** runs a simulated pipeline and returns a fixed sample result in the same JSON format as `/detect`.
-- A yellow banner, the status strip and a **SAMPLE · DEMO** tag on every result card mark everything as simulated. Demo results are not CLAP output.
-- **EXIT DEMO**, or connecting to a real API, turns demo mode off.
-
-## What the frontend visualizes
-
-The UI mirrors the backend that is already in this repository:
-
-1. upload accepted by FastAPI
-2. 48 kHz mono audio loading
-3. 10-second sliding windows
-4. CLAP audio embeddings
-5. CLAP text prompt matching
-6. max pooling across windows
-7. dynamic threshold filtering
-
-Upload progress is real (measured by the browser). Steps 2–7 all run inside one `/detect` request and the API reports no per-step progress, so the console shows them as running on the server together until the response arrives, then shows the total time taken.
-
-## UI features
-
-- futuristic dark console layout
-- animated orbital system monitor
-- drag-and-drop audio intake
-- client-side waveform preview with the 10-second window grid; click to seek
-- built-in audio player (play/pause, current time, current window number; Space toggles playback)
-- window count computed with the same rule as `classifier.py` (tails under 1 s are skipped)
-- inference pipeline with real upload progress and elapsed time
-- real detection result cards from `/detect`, each with a **Play window** button that plays that instrument's 10-second window
-- confidence/match score visualization
-- full-song timeline: a time ruler, one row per detected instrument and a playhead synced to playback; click a row to play its window, click the ruler to seek
-- detected windows highlighted on the waveform; the matching card and timeline row light up while their window is playing
-- responsive mobile layout
-- runtime FastAPI Basic Auth connection panel
+No backend running? Use **Demo mode** (navbar dialog, Studio header, or *Try the demo* on Home).
+A 65-second demo song is synthesised in the browser and analysis returns a fixed sample result in the
+`/detect` JSON format. A banner and *Sample · demo* tags mark everything produced in this mode — it is
+not CLAP output.

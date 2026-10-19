@@ -1,0 +1,27 @@
+{
+  "name": "instrument-intelligence-console",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/dancing-script": "^5.1.0",
+    "@fontsource-variable/sora": "5.1.0",
+    "@fontsource/jetbrains-mono": "5.1.0",
+    "@react-three/drei": "9.114.0",
+    "@react-three/fiber": "8.17.10",
+    "framer-motion": "11.11.9",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.27.0",
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.3",
+    "vite": "5.4.10"
+  }
+}
