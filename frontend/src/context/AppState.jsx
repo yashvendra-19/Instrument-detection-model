@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { checkHealth, postDetect } from "../lib/api.js";
 import { simulateDetect, synthDemoSong } from "../lib/demo.js";
 import { computePeaks, parseTimestamp } from "../lib/audio.js";
+import { cacheStats, clearCache as clearCacheDb, getPeaks, getResult, hashFile, putPeaks, putResult } from "../lib/cache.js";
 
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -28,8 +29,11 @@ export function AppStateProvider({ children }) {
 
   // ---- analysis ----
   const [run, setRun] = useState({ phase: "idle", steps: idleSteps(), progress: 0, waiting: false, elapsed: 0, error: null });
-  const [result, setResult] = useState(null); // { instruments, demo }
+  const [result, setResult] = useState(null); // { instruments, demo, cached, savedAt }
   const requestRef = useRef(null);
+  const [cacheInfo, setCacheInfo] = useState({ results: 0, peaks: 0 });
+  const refreshCache = useCallback(() => cacheStats().then(setCacheInfo), []);
+  useEffect(() => { refreshCache(); }, [refreshCache]);
 
   // ---- audio ----
   const audioRef = useRef(null);
@@ -70,14 +74,23 @@ export function AppStateProvider({ children }) {
     const url = URL.createObjectURL(file);
     setSong((prev) => { if (prev?.url) URL.revokeObjectURL(prev.url); return { file, url, name: file.name, size: file.size, type: file.type, peaks: null, duration: 0 }; });
     try {
-      const { peaks, duration } = await computePeaks(file);
-      setSong((s) => (s && s.file === file ? { ...s, peaks, duration } : s));
+      // Fingerprint the file; a song seen before reuses its stored waveform instead of decoding again.
+      const hash = await hashFile(file).catch(() => null);
+      setSong((s) => (s && s.file === file ? { ...s, hash } : s));
+      const cached = hash && (await getPeaks(hash));
+      if (cached) {
+        setSong((s) => (s && s.file === file ? { ...s, peaks: cached.peaks, duration: cached.duration, peaksCached: true } : s));
+      } else {
+        const { peaks, duration } = await computePeaks(file);
+        setSong((s) => (s && s.file === file ? { ...s, peaks, duration } : s));
+        if (hash) putPeaks(hash, peaks, duration).then(refreshCache);
+      }
     } catch {
       /* duration still arrives from the audio element's metadata */
     } finally {
       setSongLoading(false);
     }
-  }, []);
+  }, [refreshCache]);
 
   const loadDemoSong = useCallback(async () => {
     setSongLoading(true);
@@ -106,10 +119,19 @@ export function AppStateProvider({ children }) {
   }, []);
 
   // analysis ---------------------------------------------------------------
-  const analyze = useCallback(async () => {
+  const analyze = useCallback(async ({ force = false } = {}) => {
     if (!song?.file) return;
     if (status !== "online" && status !== "demo") { setConnectOpen(true); return; }
     const isDemo = status === "demo";
+    // Same song, same backend, analysed before: show the stored result instantly (real results only).
+    if (!isDemo && !force && song.hash) {
+      const hit = await getResult(song.hash, conn.apiUrl);
+      if (hit) {
+        setResult({ instruments: hit.instruments, demo: false, cached: true, savedAt: hit.savedAt });
+        setRun({ phase: "done", steps: STEPS.map(() => ({ state: "done", label: "CACHED" })), progress: 1, waiting: false, elapsed: 0, error: null, demo: false, cached: true, originalElapsed: hit.elapsed });
+        return;
+      }
+    }
     const started = performance.now();
     const steps = idleSteps();
     steps[0] = { state: "active", label: "0%" };
@@ -131,8 +153,10 @@ export function AppStateProvider({ children }) {
     try {
       const payload = await req.promise;
       const instruments = Array.isArray(payload?.instruments) ? payload.instruments : [];
-      setResult({ instruments, demo: !!payload.demo });
-      setRun({ phase: "done", steps: STEPS.map(() => ({ state: "done", label: "DONE" })), progress: 1, waiting: false, elapsed: (performance.now() - started) / 1000, error: null, demo: isDemo });
+      const elapsed = (performance.now() - started) / 1000;
+      setResult({ instruments, demo: !!payload.demo, cached: false });
+      setRun({ phase: "done", steps: STEPS.map(() => ({ state: "done", label: "DONE" })), progress: 1, waiting: false, elapsed, error: null, demo: isDemo });
+      if (!isDemo && !payload.demo && song.hash) putResult(song.hash, conn.apiUrl, { name: song.name, size: song.size, instruments, elapsed }).then(refreshCache);
     } catch (e) {
       if (e.aborted) {
         setRun({ phase: "idle", steps: idleSteps(), progress: 0, waiting: false, elapsed: 0, error: null });
@@ -143,7 +167,9 @@ export function AppStateProvider({ children }) {
       clearInterval(tick);
       requestRef.current = null;
     }
-  }, [song, status, conn]);
+  }, [song, status, conn, refreshCache]);
+
+  const clearCache = useCallback(async () => { await clearCacheDb(); await refreshCache(); }, [refreshCache]);
 
   const cancel = useCallback(() => requestRef.current?.abort(), []);
 
@@ -218,9 +244,9 @@ export function AppStateProvider({ children }) {
   const value = useMemo(() => ({
     conn, status, demo, connMessage, setConnMessage, connectOpen, setConnectOpen, connect, enterDemo, exitDemo,
     song, songLoading, loadFile, loadDemoSong, clearSong,
-    run, result, analyze, cancel,
+    run, result, analyze, cancel, cacheInfo, clearCache,
     audioRef, levelRef, playing, togglePlay, seek, playWindow,
-  }), [conn, status, demo, connMessage, connectOpen, connect, enterDemo, exitDemo, song, songLoading, loadFile, loadDemoSong, clearSong, run, result, analyze, cancel, playing, togglePlay, seek, playWindow]);
+  }), [conn, status, demo, connMessage, connectOpen, connect, enterDemo, exitDemo, song, songLoading, loadFile, loadDemoSong, clearSong, run, result, analyze, cancel, cacheInfo, clearCache, playing, togglePlay, seek, playWindow]);
 
   return (
     <AppCtx.Provider value={value}>
@@ -230,14 +256,19 @@ export function AppStateProvider({ children }) {
   );
 }
 
-// Re-render a component with the audio element's current time (rAF while playing).
-export function usePlaybackTime() {
+// Re-render a component with the audio element's current time while playing.
+// Throttled to ~12 updates/s: re-rendering the Studio page every frame caused visible lag.
+export function usePlaybackTime(step = 0.08) {
   const { audioRef, playing, song } = useApp();
   const [t, setT] = useState(0);
   useEffect(() => {
     const a = audioRef.current; if (!a) return;
-    let raf;
-    const loop = () => { setT(a.currentTime || 0); if (!a.paused) raf = requestAnimationFrame(loop); };
+    let raf, last = -1;
+    const loop = () => {
+      const now = a.currentTime || 0;
+      if (Math.abs(now - last) >= step || a.paused) { last = now; setT(now); }
+      if (!a.paused) raf = requestAnimationFrame(loop);
+    };
     loop();
     const onSeek = () => setT(a.currentTime || 0);
     a.addEventListener("seeked", onSeek);

@@ -43,3 +43,11 @@ No backend running? Use **Demo mode** (navbar dialog, Studio header, or *Try the
 A 65-second demo song is synthesised in the browser and analysis returns a fixed sample result in the
 `/detect` JSON format. A banner and *Sample · demo* tags mark everything produced in this mode — it is
 not CLAP output.
+
+## Cache
+
+Results and waveforms are cached in the browser (IndexedDB), keyed by the SHA-256 of the audio file
+and the API URL. Analysing a song you have analysed before returns the stored result instantly
+(marked *From cache*); **Re-run analysis** forces a fresh request, and **Clear** in the Studio's
+cache panel empties it. Only real `/detect` results are cached, never demo output. The 50 most
+recent analyses are kept.

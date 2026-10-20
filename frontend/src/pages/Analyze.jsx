@@ -31,7 +31,7 @@ function DropZone({ onFile, busy }) {
 
 export default function Analyze() {
   const app = useApp();
-  const { song, songLoading, loadFile, loadDemoSong, clearSong, run, result, analyze, cancel, status, demo, levelRef, playing, togglePlay, seek, playWindow, setConnectOpen, enterDemo, exitDemo } = app;
+  const { song, songLoading, loadFile, loadDemoSong, clearSong, run, result, analyze, cancel, status, demo, levelRef, playing, togglePlay, seek, playWindow, setConnectOpen, enterDemo, exitDemo, cacheInfo, clearCache } = app;
   const time = usePlaybackTime();
   const results = result?.instruments || [];
 
@@ -109,7 +109,7 @@ export default function Analyze() {
                 <div className="panel__actions">
                   {run.phase === "running"
                     ? <Button variant="glass" onClick={cancel}>Cancel</Button>
-                    : <Button variant="primary" size="lg" onClick={analyze} icon="◉">{ready ? (results.length ? "Analyze again" : "Analyze audio") : "Connect to analyze"}</Button>}
+                    : <Button variant="primary" size="lg" onClick={() => analyze()} icon="◉">{ready ? (results.length ? "Analyze again" : "Analyze audio") : "Connect to analyze"}</Button>}
                   <Button variant="ghost" onClick={loadDemoSong} loading={songLoading}>Use demo song</Button>
                 </div>
               </>
@@ -123,7 +123,7 @@ export default function Analyze() {
                   <div className="panel__head">
                     <div><span className="panel__kicker mono">02 / PIPELINE</span><h2>Inference</h2></div>
                     <span className={`chip mono ${run.phase === "failed" ? "chip--danger" : run.phase === "done" ? "chip--success" : ""}`}>
-                      {run.phase === "running" ? `${run.demo ? "demo · " : ""}${formatTime(run.elapsed)}` : run.phase === "done" ? `${run.demo ? "simulated in" : "done in"} ${run.elapsed.toFixed(1)} s` : "failed"}
+                      {run.phase === "running" ? `${run.demo ? "demo · " : ""}${formatTime(run.elapsed)}` : run.phase === "done" ? (run.cached ? "from cache · instant" : `${run.demo ? "simulated in" : "done in"} ${run.elapsed.toFixed(1)} s`) : "failed"}
                     </span>
                   </div>
                   <Pipeline run={run} />
@@ -143,6 +143,14 @@ export default function Analyze() {
             </Suspense>
             <p className="muted center small">The sphere reacts to the audio level while a song plays.</p>
           </GlassCard>
+          <GlassCard className="panel cache-card" spotlight={false}>
+            <div className="cache-card__row">
+              <div><span className="panel__kicker mono">BROWSER CACHE</span>
+                <p className="small"><b className="mono">{cacheInfo.results}</b> analyses · <b className="mono">{cacheInfo.peaks}</b> waveforms</p></div>
+              <Button variant="ghost" size="sm" onClick={clearCache} disabled={!cacheInfo.results && !cacheInfo.peaks}>Clear</Button>
+            </div>
+            <p className="muted small">Songs you analysed before load their results instantly. Stored only in this browser.</p>
+          </GlassCard>
           <div className="stat-grid">
             <GlassCard className="stat"><span className="mono muted">detected</span><strong>{results.length || "—"}</strong></GlassCard>
             <GlassCard className="stat"><span className="mono muted">top match</span><strong>{top?.instrument || "—"}</strong></GlassCard>
@@ -158,7 +166,11 @@ export default function Analyze() {
           <motion.section className="section section--flush" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="section__head section__head--row">
               <div><Kicker>03 / Output</Kicker><h2 className="section__title">Detection matrix</h2></div>
-              {results.length > 0 && <Button variant="glass" size="sm" onClick={exportJson}>Export JSON</Button>}
+              <div className="section__actions">
+                {result.cached && <span className="chip chip--success" title="Stored in this browser">From cache · analysed {new Date(result.savedAt).toLocaleString()}</span>}
+                {result.cached && <Button variant="ghost" size="sm" onClick={() => analyze({ force: true })}>Re-run analysis</Button>}
+                {results.length > 0 && <Button variant="glass" size="sm" onClick={exportJson}>Export JSON</Button>}
+              </div>
             </div>
             {results.length === 0 ? (
               <GlassCard className="empty"><strong>No instruments above the threshold</strong><span className="muted">The detector returned no candidates after dynamic filtering.</span></GlassCard>

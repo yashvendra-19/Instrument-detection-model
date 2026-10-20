@@ -48,7 +48,6 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan); }
 /* ---------- glass ---------- */
 .glass {
   position: relative; background: var(--grad-glass); border: 1px solid var(--glass-border); border-radius: var(--r-lg);
-  backdrop-filter: blur(var(--blur-glass)) saturate(160%); -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(160%);
   box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 -24px 48px rgba(var(--violet-rgb), 0.06), var(--shadow-2);
 }
 .glass--tilt { transform-style: preserve-3d; will-change: transform; }
@@ -77,7 +76,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan); }
 .btn--lg { padding: 15px 26px; font-size: var(--fs-md); }
 .btn--primary { background: var(--grad-aurora); color: #06061a; box-shadow: 0 10px 30px rgba(var(--violet-rgb), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
 .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(var(--violet-rgb), 0.5), var(--glow-cyan); }
-.btn--glass { background: var(--glass-2); border-color: var(--glass-border); backdrop-filter: blur(var(--blur-glass)); -webkit-backdrop-filter: blur(var(--blur-glass)); }
+.btn--glass { background: var(--glass-2); border-color: var(--glass-border); }
 .btn--glass:hover { background: var(--glass-3); border-color: var(--glass-border-strong); transform: translateY(-2px); }
 .btn--ghost { background: transparent; border-color: var(--glass-border); color: var(--text-2); }
 .btn--ghost:hover { color: var(--text-1); border-color: rgba(var(--cyan-rgb), 0.5); }
@@ -153,7 +152,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan); }
 .hero__halo { position: absolute; inset: 14%; border-radius: 50%; background: radial-gradient(circle, rgba(var(--violet-rgb), 0.35), transparent 65%); filter: blur(30px); }
 .sound-sphere { position: absolute; inset: 0; }
 .sound-sphere--fallback { border-radius: 50%; background: radial-gradient(circle, rgba(var(--cyan-rgb), 0.2), transparent 60%); }
-.float-card { position: absolute; display: grid; gap: 2px; padding: 12px 16px; border-radius: var(--r-md); font-size: var(--fs-sm); animation: bob 6s var(--ease-in-out) infinite; }
+.float-card { backdrop-filter: blur(var(--blur-glass)) saturate(160%); -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(160%); position: absolute; display: grid; gap: 2px; padding: 12px 16px; border-radius: var(--r-md); font-size: var(--fs-sm); animation: bob 6s var(--ease-in-out) infinite; }
 .float-card span { font-size: var(--fs-xs); }
 .float-card--a { left: -2%; bottom: 18%; }
 .float-card--b { right: 0; top: 14%; animation-delay: -3s; }
@@ -373,12 +372,17 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan); }
 .stack { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 
 /* ---------- footer ---------- */
-.footer { border-top: 1px solid var(--glass-border); background: var(--bg-1); backdrop-filter: blur(var(--blur-glass)); -webkit-backdrop-filter: blur(var(--blur-glass)); }
+.footer { border-top: 1px solid var(--glass-border); background: var(--bg-1); }
 .footer__inner { max-width: var(--page-max); margin: 0 auto; padding: var(--sp-6) var(--page-gutter); display: flex; justify-content: space-between; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
 .footer__brand { font-weight: var(--fw-medium); color: var(--text-2); } .footer__brand b { color: var(--text-1); font-family: var(--font-display); font-size: 1.4rem; margin-left: 4px; }
 .footer__inner p { font-size: var(--fs-sm); margin-top: var(--sp-1); }
 .footer__links { display: flex; gap: var(--sp-5); font-size: var(--fs-sm); }
 .footer__links a { color: var(--text-2); text-decoration: none; } .footer__links a:hover { color: var(--text-1); }
+
+.section__actions { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
+.cache-card { gap: var(--sp-2); }
+.cache-card__row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.cache-card__row p { margin-top: 2px; color: var(--text-2); }
 
 /* ---------- display (cursive) sizing — script faces read smaller, so titles step up ---------- */
 .bento__card h3, .inst-card h3, .step-row__card h3, .result__name h3, .panel__head h2, .modal__head h2 { font-size: 1.6rem; line-height: 1.2; }

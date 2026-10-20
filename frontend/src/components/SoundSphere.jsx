@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Sparkles } from "@react-three/drei";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 // 3D simplex noise — Ashima Arts / Stefan Gustavson (MIT licence).
@@ -110,12 +110,21 @@ function Rings() {
   );
 }
 
-export default function SoundSphere({ levelRef, className = "", detail = 30, rings = true, sparkles = true }) {
+export default function SoundSphere({ levelRef, className = "", detail = 24, rings = true, sparkles = true }) {
   const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const wrap = useRef(null);
+  const [visible, setVisible] = useState(true);
+  // Stop rendering while the sphere is scrolled off-screen or the tab is hidden.
+  useEffect(() => {
+    const el = wrap.current; if (!el) return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "100px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <div className={`sound-sphere ${className}`} aria-hidden="true">
-      <Canvas camera={{ position: [0, 0, 6.2], fov: 45 }} dpr={[1, 1.75]} gl={{ antialias: true, alpha: true }}
-        frameloop={reduced ? "demand" : "always"}>
+    <div ref={wrap} className={`sound-sphere ${className}`} aria-hidden="true">
+      <Canvas camera={{ position: [0, 0, 6.2], fov: 45 }} dpr={[1, 1.5]} gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+        frameloop={reduced ? "demand" : visible ? "always" : "never"}>
         <ParticleSphere levelRef={levelRef} detail={detail} />
         {rings && <Rings />}
         {sparkles && <Sparkles count={70} scale={[7, 5, 4]} size={2.2} speed={0.35} color="#a5b4fc" opacity={0.7} />}
